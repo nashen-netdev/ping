@@ -1,0 +1,10 @@
+address/
+pass/
+log/
+rm/
+1.0.py
+2.0.py
+3.0.py
+.venv/
+server/
+results/
