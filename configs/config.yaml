@@ -1,0 +1,34 @@
+# Ping Tool 配置文件
+
+# SSH连接配置
+ssh:
+  timeout: 10
+  max_retries: 2
+
+# Ping参数配置
+ping:
+  count: 3
+  timeout: 2
+  interval: 0.2
+
+# 并发配置
+concurrency:
+  local_max_workers: 20
+  remote_max_workers: 5
+  network_max_workers: 30
+
+# 延迟分析配置
+analysis:
+  high_latency_threshold: 1.0  # ms
+
+# 文件路径配置
+paths:
+  credentials_file: pass/credentials.xlsx
+  key_dir: pass/key
+  log_dir: logs
+
+# 日志配置
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+

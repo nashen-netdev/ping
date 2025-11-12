@@ -1,6 +1,44 @@
 # 网络 Ping 测试工具
 
-一个全面的网络连通性测试工具，用于测试多个IP地址或IP网段的连通性并测量延迟。
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-orange)](https://github.com/yourorg/ping-tool)
+
+一个专业的网络连通性测试工具，采用标准Python项目架构，支持本地和远程并发测试。
+
+## 快速开始
+
+### 安装
+
+```bash
+# 方法1：开发模式安装（推荐）
+cd /path/to/ping
+python3 -m venv .venv
+source .venv/bin/activate
+make install
+
+# 方法2：直接使用
+pip3 install -r requirements.txt
+python3 ping.py
+```
+
+### 基础使用
+
+```bash
+# 使用Makefile运行
+make run
+
+# 或作为Python模块运行
+python3 -m ping_tool
+
+# 或使用命令行工具（需先安装）
+ping-tool
+
+# 或使用兼容脚本
+python3 ping.py
+```
+
+详细安装说明请查看 [docs/INSTALL.md](docs/INSTALL.md)
 
 ## 快速功能一览
 
@@ -65,25 +103,53 @@
   - 完整的ping输出结果
   - 按来源IP分类记录
 
-## 项目结构
+## 项目结构（标准Python架构）
 
 ```
-.
-├── address/            # 包含IP地址列表的目录
-│   └── ip.txt          # 示例IP地址列表
-├── his/                # 历史版本目录
-│   ├── 1.0.py          # 早期版本
-│   ├── 2.0.py          # 早期版本
-│   ├── 3.0.py          # 早期版本
-│   └── ping_v1.py      # 早期版本
-├── log/                # 存储Ping测试结果的目录
-│   └── ping_results.log # 测试结果日志
-├── pass/               # 凭证目录
-│   ├── credentials.xlsx # 用于SSH访问的服务器凭证
-│   └── key/            # SSH密钥文件
-├── ping_v2.py          # 主程序（从Excel读取IP，支持SSH）
-└── README.md           # 本文件
+ping/
+├── src/                    # 源代码（src-layout）
+│   └── ping_tool/          # 主包
+│       ├── __init__.py     # 包初始化
+│       ├── __main__.py     # 模块入口
+│       ├── cli.py          # CLI主程序
+│       ├── core/           # 核心功能
+│       │   ├── ping.py     # Ping功能实现
+│       │   └── ssh.py      # SSH连接管理
+│       ├── utils/          # 工具函数
+│       │   ├── analysis.py # 延迟分析
+│       │   ├── credentials.py # 凭证管理
+│       │   └── network.py  # 网络工具
+│       └── models/         # 数据模型（预留）
+├── tests/                  # 单元测试
+│   ├── test_analysis.py
+│   └── test_network.py
+├── examples/               # ⭐ 示例文件
+│   ├── credentials.example.xlsx  # Excel配置示例
+│   └── README.md           # 示例说明文档
+├── configs/                # 配置文件
+│   └── config.yaml
+├── docs/                   # 文档
+│   ├── INSTALL.md          # 安装指南
+│   └── DEVELOPMENT.md      # 开发指南
+├── logs/                   # 日志输出
+├── pass/                   # 凭证和密钥（不提交Git）
+│   ├── credentials.xlsx    # SSH凭证（gitignore）
+│   └── key/                # SSH密钥文件（gitignore）
+├── his/                    # 历史版本（已归档）
+├── pyproject.toml          # 项目配置（PEP 621）
+├── Makefile                # 快捷命令
+├── requirements.txt        # 依赖列表
+├── ping.py                 # 兼容性入口脚本
+└── README.md               # 本文档
 ```
+
+**架构特点**：
+- ✅ 采用 **src-layout** 标准结构
+- ✅ 完整的 **pyproject.toml** 配置
+- ✅ 模块化设计，职责分离
+- ✅ 支持 `pip install -e .` 开发模式
+- ✅ 支持 `python -m ping_tool` 模块运行
+- ✅ 完善的测试框架
 
 ## 使用方法
 
@@ -96,6 +162,19 @@ python ping_v2.py
 ## 输入格式
 
 ### Excel配置文件说明
+
+**快速开始**：使用示例文件
+```bash
+# 复制示例文件
+cp examples/credentials.example.xlsx pass/credentials.xlsx
+
+# 编辑填写真实凭证
+vim pass/credentials.xlsx  # 或使用Excel打开
+```
+
+完整配置说明请查看 [examples/README.md](examples/README.md)
+
+---
 
 创建Excel文件`pass/credentials.xlsx`，包含以下列：
 
