@@ -48,7 +48,7 @@ python3 ping.py
 | [INSTALL.md](docs/INSTALL.md) | 安装指南 |
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | 开发指南 |
 | [TESTING.md](docs/TESTING.md) | 测试文档（86%覆盖率） |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构设计文档 |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构设计文档 |
 | [CHANGELOG.md](CHANGELOG.md) | 版本变更记录 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献指南 |
 | [LICENSE](LICENSE) | MIT开源许可证 |
@@ -120,6 +120,15 @@ python3 ping.py
 
 ```
 ping/
+├── README.md               # 📄 项目主文档
+├── CHANGELOG.md            # 📄 版本变更记录
+├── CONTRIBUTING.md         # 📄 贡献指南
+├── LICENSE                 # 📄 MIT许可证
+├── pyproject.toml          # 项目配置（PEP 621）
+├── Makefile                # 快捷命令
+├── requirements.txt        # 依赖列表
+├── ping.py                 # 兼容性入口脚本
+│
 ├── src/                    # 源代码（src-layout）
 │   └── ping_tool/          # 主包
 │       ├── __init__.py     # 包初始化
@@ -133,27 +142,40 @@ ping/
 │       │   ├── credentials.py # 凭证管理
 │       │   └── network.py  # 网络工具
 │       └── models/         # 数据模型（预留）
-├── tests/                  # 单元测试
-│   ├── test_analysis.py
-│   └── test_network.py
+│
+├── tests/                  # 单元测试（86%覆盖率）
+│   ├── test_ping.py        # Ping功能测试
+│   ├── test_ssh.py         # SSH连接测试
+│   ├── test_credentials.py # 凭证管理测试
+│   ├── test_analysis.py    # 延迟分析测试
+│   └── test_network.py     # 网络工具测试
+│
+├── docs/                   # 📚 详细文档
+│   ├── INSTALL.md          # 安装指南
+│   ├── DEVELOPMENT.md      # 开发指南
+│   ├── TESTING.md          # 测试文档
+│   ├── ARCHITECTURE.md     # 架构设计
+│   └── history/            # 历史记录
+│       ├── REFACTORING_SUMMARY.md
+│       └── SHORT_TERM_OPTIMIZATION.md
+│
 ├── examples/               # ⭐ 示例文件
 │   ├── credentials.example.xlsx  # Excel配置示例
 │   └── README.md           # 示例说明文档
+│
 ├── configs/                # 配置文件
 │   └── config.yaml
-├── docs/                   # 文档
-│   ├── INSTALL.md          # 安装指南
-│   └── DEVELOPMENT.md      # 开发指南
+│
 ├── logs/                   # 日志输出
+│   └── ping_results.log
+│
 ├── pass/                   # 凭证和密钥（不提交Git）
 │   ├── credentials.xlsx    # SSH凭证（gitignore）
 │   └── key/                # SSH密钥文件（gitignore）
-├── his/                    # 历史版本（已归档）
-├── pyproject.toml          # 项目配置（PEP 621）
-├── Makefile                # 快捷命令
-├── requirements.txt        # 依赖列表
-├── ping.py                 # 兼容性入口脚本
-└── README.md               # 本文档
+│
+└── .github/                # GitHub配置
+    ├── ISSUE_TEMPLATE/     # Issue模板
+    └── pull_request_template.md
 ```
 
 **架构特点**：
