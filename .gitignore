@@ -8,3 +8,5 @@ rm/
 .venv/
 server/
 results/
+his/
+.DS_Store
