@@ -40,6 +40,19 @@ python3 ping.py
 
 详细安装说明请查看 [docs/INSTALL.md](docs/INSTALL.md)
 
+## 📚 项目文档
+
+| 文档 | 说明 |
+|------|------|
+| [README.md](README.md) | 项目主文档（本文件） |
+| [INSTALL.md](docs/INSTALL.md) | 安装指南 |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | 开发指南 |
+| [TESTING.md](docs/TESTING.md) | 测试文档（86%覆盖率） |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构设计文档 |
+| [CHANGELOG.md](CHANGELOG.md) | 版本变更记录 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献指南 |
+| [LICENSE](LICENSE) | MIT开源许可证 |
+
 ## 快速功能一览
 
 | 功能分类 | 支持特性 |
