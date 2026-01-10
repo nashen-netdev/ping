@@ -29,6 +29,7 @@ dependencies = [
     "pandas>=1.3.0",
     "openpyxl>=3.0.0",
     "paramiko>=2.7.0",
+    "python-calamine>=0.6.0",
 ]
 
 [project.optional-dependencies]
@@ -43,6 +44,7 @@ dev = [
 
 [project.scripts]
 ping-tool = "ping_tool.cli:main"
+ping-ip-planning = "ping_tool.cli_ip_planning:ping_ip_planning_main"
 
 [project.urls]
 Homepage = "https://github.com/yourorg/ping-tool"

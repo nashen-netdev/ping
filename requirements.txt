@@ -1,3 +1,4 @@
 paramiko
 openpyxl
 pandas
+python-calamine

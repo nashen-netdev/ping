@@ -36,7 +36,39 @@ ping-tool
 
 # 或使用兼容脚本
 python3 ping.py
+
+# 使用 IP 地址规划表 Ping 工具
+ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
 ```
+
+### IP 地址规划表 Ping 功能（新功能）
+
+专门用于 ping IP 地址规划表中的设备：
+
+```bash
+# 基本用法：ping net&sec sheet 的所有设备
+ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+
+# 只 ping 绿色单元格的 IP（如果 Excel 格式支持）
+ping-ip-planning --sheet "net&sec" --color green
+
+# 查看可用的颜色
+ping-ip-planning --list-colors
+
+# 使用本地 ping（不通过远程服务器）
+ping-ip-planning --local --max-workers 20
+
+# Ping 服务器&安全 sheet
+ping-ip-planning --sheet "服务器&安全"
+```
+
+**功能特性：**
+- ✅ 自动读取 MGMT 列的 IP 地址和 hostname
+- ✅ 支持按颜色过滤（绿色等，需要 Excel 格式支持）
+- ✅ 自动排除删除线的 IP 地址
+- ✅ 支持本地或远程 ping
+- ✅ 生成详细的测试报告（IP + hostname）
+- ✅ 自动统计可达率
 
 详细安装说明请查看 [docs/INSTALL.md](docs/INSTALL.md)
 
@@ -57,7 +89,7 @@ python3 ping.py
 
 | 功能分类 | 支持特性 |
 |---------|---------|
-| **输入支持** | Excel配置文件、单个IP、CIDR网段、跳板机配置 |
+| **输入支持** | Excel配置文件、单个IP、CIDR网段、跳板机配置、IP地址规划表 |
 | **执行模式** | 本地测试、远程SSH测试、自动模式切换 |
 | **认证方式** | SSH密码认证、SSH密钥认证 |
 | **并发性能** | 本地20-30线程、远程5线程、智能调整 |
@@ -188,11 +220,83 @@ ping/
 
 ## 使用方法
 
+工具提供两种主要使用方式：
+
+### 1. 标准 Ping 工具（从 credentials.xlsx）
+
 从Excel文件读取IP地址和凭证，可以从本地或远程服务器执行Ping测试。
 
 ```bash
-python ping_v2.py
+# 使用 Makefile
+make run
+
+# 直接运行
+python3 -m ping_tool
+
+# 或使用命令行工具
+ping-tool
 ```
+
+### 2. IP 地址规划表 Ping 工具（新功能）
+
+专门用于 ping IP 地址规划表中的网络设备。
+
+```bash
+# 基本用法
+ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+
+# 完整参数说明
+ping-ip-planning \
+    --file pass/IP地址规划表-金茂.xlsx \  # Excel 文件路径
+    --sheet "net&sec" \                    # Sheet 页名称
+    --color green \                        # 只 ping 绿色单元格（可选）
+    --local \                              # 使用本地 ping（不使用远程）
+    --max-workers 10                       # 并发数
+
+# 其他有用的命令
+ping-ip-planning --list-colors            # 列出可用的颜色
+ping-ip-planning --sheet "服务器&安全"      # ping 其他 sheet
+```
+
+#### IP 地址规划表功能说明
+
+**支持的 Sheet 页：**
+- `net&sec` - 网络和安全设备
+- `服务器&安全` - 服务器和安全设备
+
+**功能特性：**
+- ✅ 自动读取 `MGMT` 列的 IP 地址
+- ✅ 同时读取 `hostname` 列，结果显示 "IP (hostname)"
+- ✅ 自动排除删除线的 IP 地址（默认开启）
+- ✅ 支持按颜色过滤（如只 ping 绿色单元格）
+- ✅ 支持本地或远程 ping
+- ✅ 生成详细的测试报告
+
+**颜色过滤说明：**
+- 工具会尝试读取 Excel 单元格的颜色信息
+- 如果 Excel 文件格式不兼容，会跳过颜色过滤
+- 使用 `--list-colors` 可以查看文件中使用的颜色
+- 目前支持的颜色：`green`（绿色）
+
+**输出示例：**
+```
+✓ 10.201.232.1    (spine1-502-I01-4-bj08         ) - 可达
+✓ 10.201.232.2    (spine2-504-I01-4-bj08         ) - 可达
+✗ 10.201.232.3    (GPU leaf1-1-502-B10-21-bj08   ) - 不可达
+  进度: 3/194 (1.5%)
+
+============================================================
+测试结果统计
+============================================================
+总计 IP 数量: 194
+可达 IP 数量: 190
+不可达 IP 数量: 4
+可达率: 97.9%
+```
+
+**日志文件：**
+- 标准工具：`logs/ping_results.log`
+- IP 规划表工具：`logs/ping_results_net_sec.log`
 
 ## 输入格式
 

@@ -11,7 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Web界面开发
 - 异步支持（asyncio）
 - 配置文件自动加载
-- 命令行参数支持
+
+## [2.1.0] - 2026-01-10
+
+### Added - 新增功能
+- ✨ 新增 IP 地址规划表 Ping 工具（`ping-ip-planning` 命令）
+- ✨ 支持从 Excel 的 `net&sec` 和 `服务器&安全` sheet 读取 IP
+- ✨ 自动读取 MGMT 列的 IP 和 hostname 列的主机名
+- ✨ 支持按单元格颜色过滤（如只 ping 绿色单元格）
+- ✨ 自动排除删除线的 IP 地址
+- ✨ 添加 `python-calamine` 引擎支持，提升 Excel 读取兼容性
+- ✨ 新增 `excel_reader.py` 模块处理 Excel 格式读取
+- ✨ 支持 `--list-colors` 参数查看可用颜色
+- ✨ 支持 `--local` 参数强制使用本地 ping
+- ✨ 支持 `--max-workers` 参数自定义并发数
+
+### Changed - 变更
+- 🔨 更新 requirements.txt 添加 python-calamine 依赖
+- 🔨 更新 pyproject.toml 添加新的命令行入口点
+- 🔨 扩展文档说明新功能的使用方法
+
+### Improved - 优化
+- ⚡ 使用 calamine 引擎读取 Excel，提升兼容性
+- ⚡ 批量读取单元格样式，提升性能
+- ⚡ 优化日志输出，同时显示 IP 和 hostname
+
+### Fixed - 修复
+- 🐛 解决某些 Excel 文件格式导致 openpyxl 无法读取的问题
 
 ## [2.0.0] - 2025-11-12
 

@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format clean run
+.PHONY: help install install-dev test lint format clean run run-ip-planning demo-ip-planning
 
 # 默认目标
 help:
@@ -11,6 +11,8 @@ help:
 	@echo "  make format        - 格式化代码"
 	@echo "  make clean         - 清理临时文件"
 	@echo "  make run           - 运行程序"
+	@echo "  make run-ip-planning - 运行 IP 规划表 Ping 工具"
+	@echo "  make demo-ip-planning - 运行 IP 规划表演示脚本"
 	@echo "  make build         - 构建包"
 	@echo "  make docs          - 生成文档"
 	@echo ""
@@ -51,6 +53,14 @@ clean:
 # 运行程序
 run:
 	python3 -m ping_tool
+
+# 运行 IP 规划表 Ping 工具
+run-ip-planning:
+	python3 -m ping_tool.cli_ip_planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+
+# 运行 IP 规划表演示脚本
+demo-ip-planning:
+	@bash examples/ping_ip_planning_demo.sh
 
 # 构建包
 build:
