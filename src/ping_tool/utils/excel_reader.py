@@ -8,9 +8,9 @@ from openpyxl.styles import Font
 from openpyxl.styles.fills import PatternFill
 
 
-def read_excel_with_calamine(file_path: str, sheet_name: str) -> pd.DataFrame:
+def read_excel_data_only(file_path: str, sheet_name: str) -> pd.DataFrame:
     """
-    使用 calamine 引擎读取 Excel 文件（快速，但不支持样式）
+    读取 Excel 文件数据
     
     Args:
         file_path: Excel 文件路径
@@ -20,17 +20,11 @@ def read_excel_with_calamine(file_path: str, sheet_name: str) -> pd.DataFrame:
         pd.DataFrame: 数据框
     """
     try:
-        df = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='calamine')
+        df = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='openpyxl')
         return df
     except Exception as e:
-        print(f"使用 calamine 引擎读取失败: {e}")
-        # 尝试使用默认引擎
-        try:
-            df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
-            return df
-        except Exception as e2:
-            print(f"使用默认引擎读取失败: {e2}")
-            raise
+        print(f"读取 Excel 文件失败: {e}")
+        raise
 
 
 def get_cell_style_info(file_path: str, sheet_name: str, row_idx: int, col_idx: int) -> Dict:
@@ -198,9 +192,9 @@ def read_network_security_ips(file_path: str,
     """
     sheet_name = 'net&sec'
     
-    # 使用 calamine 读取数据
+    # 使用多种方式尝试读取数据
     print(f"正在读取 {file_path} 的 {sheet_name} sheet...")
-    df = read_excel_with_calamine(file_path, sheet_name)
+    df = read_excel_data_only(file_path, sheet_name)
     
     # 查找表头行（包含 MGMT 和 hostname）
     header_row_idx = None
@@ -281,7 +275,7 @@ def list_available_colors(file_path: str, sheet_name: str = 'net&sec', column_na
         list: 颜色列表
     """
     # 读取数据找到列索引
-    df = read_excel_with_calamine(file_path, sheet_name)
+    df = read_excel_data_only(file_path, sheet_name)
     
     # 查找列索引
     col_idx = None

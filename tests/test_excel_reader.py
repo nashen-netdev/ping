@@ -4,15 +4,15 @@
 import os
 import pytest
 from ping_tool.utils.excel_reader import (
-    read_excel_with_calamine,
+    read_excel_data_only,
     read_network_security_ips,
     is_green_cell,
     list_available_colors
 )
 
 
-def test_read_excel_with_calamine():
-    """测试使用 calamine 引擎读取 Excel"""
+def test_read_excel_data_only():
+    """测试读取 Excel 数据"""
     # 这个测试需要实际的 Excel 文件
     # 在实际环境中运行
     pass
