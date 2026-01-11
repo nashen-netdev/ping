@@ -334,22 +334,8 @@ def interactive_input_config() -> Optional[Dict]:
         # 6. 并发数 - 自动设置，不询问
         max_workers = None
         
+        # 直接返回配置，不需要确认（与环境模式保持一致）
         print()
-        print("=" * 70)
-        print("配置确认:")
-        print("=" * 70)
-        print(f"  文件: {file_path}")
-        print(f"  Sheet: {sheet}")
-        print(f"  颜色过滤: {'绿色' if color_filter == 'green' else '无'}")
-        print(f"  排除删除线: 是（自动）")
-        print(f"  本地 ping: {'是' if use_local else '否'}")
-        print(f"  并发数: 自动")
-        print("=" * 70)
-        
-        confirm = input("\n确认以上配置? (y/n) [y]: ").strip().lower()
-        if confirm == 'n':
-            print("已取消")
-            return None
         
         return {
             'name': '手动输入配置',
