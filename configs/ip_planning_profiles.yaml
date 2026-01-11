@@ -1,0 +1,57 @@
+# IP 地址规划表 Ping 工具配置文件
+# 可以定义多个配置环境（profile），方便不同场景使用
+
+# 默认配置
+default:
+  name: "默认配置"
+  description: "金茂项目网络设备 ping 测试"
+  file: "pass/IP地址规划表-金茂1.xlsx"
+  sheet: "net&sec"
+  color_filter: "none"  # none, green, 或其他颜色
+  exclude_strikethrough: true
+  use_local: false
+  max_workers: null  # null 表示自动
+
+# 网络设备配置
+network_devices:
+  name: "网络设备"
+  description: "只 ping 网络和安全设备"
+  file: "pass/IP地址规划表-金茂1.xlsx"
+  sheet: "net&sec"
+  color_filter: "none"
+  exclude_strikethrough: true
+  use_local: false
+  max_workers: 10
+
+# 服务器配置
+servers:
+  name: "服务器设备"
+  description: "只 ping 服务器和安全设备"
+  file: "pass/IP地址规划表-金茂1.xlsx"
+  sheet: "服务器&安全"
+  color_filter: "none"
+  exclude_strikethrough: true
+  use_local: false
+  max_workers: 10
+
+# 绿色标记设备（示例）
+green_only:
+  name: "绿色标记设备"
+  description: "只 ping 标记为绿色的设备"
+  file: "pass/IP地址规划表-金茂1.xlsx"
+  sheet: "net&sec"
+  color_filter: "green"
+  exclude_strikethrough: true
+  use_local: false
+  max_workers: 10
+
+# 本地高速测试
+local_fast:
+  name: "本地高速测试"
+  description: "使用本地 ping，高并发"
+  file: "pass/IP地址规划表-金茂1.xlsx"
+  sheet: "net&sec"
+  color_filter: "none"
+  exclude_strikethrough: true
+  use_local: true
+  max_workers: 30

@@ -1,6 +1,11 @@
 """
-IP 地址规划表 Ping 工具 CLI
+IP 地址规划表 Ping 工具 CLI (增强版)
 专门用于 ping IP 地址规划表中的设备
+
+支持三种使用模式：
+1. 命令行参数模式：直接指定所有参数
+2. 配置文件模式：使用预定义的配置环境（profile）
+3. 交互式模式：通过问答方式输入配置
 """
 import os
 import argparse
@@ -11,16 +16,43 @@ from .core.ssh import SSHClient, SSHConnectionPool
 from .utils.credentials import get_credentials
 from .utils.network import get_local_ip
 from .utils.excel_reader import read_network_security_ips, list_available_colors
+from .utils.config_manager import ConfigManager, interactive_select_profile, interactive_input_config
 
 
 def ping_ip_planning_main():
     """IP 地址规划表 Ping 工具主程序"""
-    parser = argparse.ArgumentParser(description='Ping IP 地址规划表中的设备')
-    parser.add_argument('--file', '-f', default='pass/IP地址规划表-金茂.xlsx',
+    parser = argparse.ArgumentParser(
+        description='Ping IP 地址规划表中的设备',
+        epilog="""
+使用模式:
+  1. 命令行模式: 直接指定参数
+     ping-ip-planning --file xxx.xlsx --sheet "net&sec"
+  
+  2. 配置文件模式: 使用预定义配置
+     ping-ip-planning --profile network_devices
+     ping-ip-planning --profile servers
+  
+  3. 交互式模式: 无参数时自动进入
+     ping-ip-planning
+     ping-ip-planning --interactive
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    # 模式选择
+    parser.add_argument('--profile', '-p', 
+                        help='使用配置文件中的环境（如: default, network_devices, servers）')
+    parser.add_argument('--interactive', '-i', action='store_true',
+                        help='进入交互式模式')
+    parser.add_argument('--list-profiles', action='store_true',
+                        help='列出所有可用的配置环境')
+    
+    # 文件参数
+    parser.add_argument('--file', '-f',
                         help='IP 地址规划表文件路径')
-    parser.add_argument('--sheet', '-s', default='net&sec',
+    parser.add_argument('--sheet', '-s',
                         help='Sheet 页名称，可选: net&sec, 服务器&安全')
-    parser.add_argument('--color', '-c', choices=['green', 'none'], default='none',
+    parser.add_argument('--color', '-c', choices=['green', 'none'],
                         help='过滤颜色: green=只 ping 绿色单元格, none=不过滤颜色')
     parser.add_argument('--no-exclude-strikethrough', action='store_true',
                         help='不排除删除线的 IP（默认会排除）')
@@ -33,15 +65,87 @@ def ping_ip_planning_main():
     
     args = parser.parse_args()
     
+    # 初始化配置管理器
+    config_manager = ConfigManager()
+    
+    # 处理 --list-profiles
+    if args.list_profiles:
+        print("\n可用的配置环境:")
+        print("=" * 70)
+        profiles = config_manager.list_profiles()
+        if profiles:
+            for profile_name in profiles:
+                info = config_manager.get_profile_info(profile_name)
+                print(f"  • {profile_name:20s} - {info}")
+        else:
+            print("  没有找到配置文件或配置为空")
+            print(f"  配置文件位置: {config_manager.config_file}")
+        print("=" * 70)
+        print("\n使用方法: ping-ip-planning --profile <环境名>")
+        return
+    
+    # 确定配置来源
+    config = None
+    
+    # 1. 如果指定了 --profile，使用配置文件
+    if args.profile:
+        config = config_manager.get_profile(args.profile)
+        if not config:
+            print(f"错误: 配置环境 '{args.profile}' 不存在")
+            profiles = config_manager.list_profiles()
+            if profiles:
+                print(f"可用的环境: {', '.join(profiles)}")
+                print("使用 --list-profiles 查看详细信息")
+            else:
+                print("没有找到任何配置环境")
+            return
+        print(f"✓ 使用配置环境: {args.profile}")
+        print(f"  {config.get('description', '')}")
+        print()
+    
+    # 2. 如果指定了 --interactive 或没有任何参数，进入交互模式
+    elif args.interactive or not any([args.file, args.sheet, args.color]):
+        print("\n欢迎使用 IP 地址规划表 Ping 工具")
+        print("=" * 70)
+        
+        # 先让用户选择是使用配置还是手动输入
+        if config_manager.list_profiles():
+            config = interactive_select_profile(config_manager)
+        
+        # 如果没有选择配置，进入手动输入模式
+        if config is None:
+            config = interactive_input_config()
+            if config is None:
+                print("已退出")
+                return
+    
+    # 3. 使用命令行参数（优先级最高）
+    if config:
+        # 从配置中读取，但命令行参数可以覆盖
+        file_path = args.file or config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
+        sheet_name = args.sheet or config.get('sheet', 'net&sec')
+        color_filter = args.color or config.get('color_filter', 'none')
+        exclude_strikethrough = not args.no_exclude_strikethrough and config.get('exclude_strikethrough', True)
+        use_local = args.local or config.get('use_local', False)
+        max_workers = args.max_workers or config.get('max_workers')
+    else:
+        # 纯命令行模式
+        file_path = args.file or 'pass/IP地址规划表-金茂1.xlsx'
+        sheet_name = args.sheet or 'net&sec'
+        color_filter = args.color or 'none'
+        exclude_strikethrough = not args.no_exclude_strikethrough
+        use_local = args.local
+        max_workers = args.max_workers
+    
     # 检查文件是否存在
-    if not os.path.exists(args.file):
-        print(f"错误: 文件不存在: {args.file}")
+    if not os.path.exists(file_path):
+        print(f"错误: 文件不存在: {file_path}")
         return
     
     # 如果只是列出颜色
     if args.list_colors:
-        print(f"正在读取 {args.file} 的 {args.sheet} sheet 中 MGMT 列的颜色...")
-        colors = list_available_colors(args.file, args.sheet, 'MGMT')
+        print(f"正在读取 {file_path} 的 {sheet_name} sheet 中 MGMT 列的颜色...")
+        colors = list_available_colors(file_path, sheet_name, 'MGMT')
         if colors:
             print(f"\n找到 {len(colors)} 种颜色:")
             for color in colors:
@@ -50,22 +154,14 @@ def ping_ip_planning_main():
             print("未找到任何颜色，或无法读取样式信息")
         return
     
-    # 交互式选择是否过滤颜色
-    if args.color == 'none':
-        user_input = input("是否只 ping 绿色单元格？(y/n，默认 n): ").strip().lower()
-        if user_input == 'y':
-            args.color = 'green'
-    
-    # 设置过滤参数
-    filter_color = args.color if args.color != 'none' else None
-    exclude_strikethrough = not args.no_exclude_strikethrough
-    
-    print("\n" + "=" * 60)
+    # 显示配置信息
+    print()
+    print("=" * 60)
     print(f"IP 地址规划表 Ping 工具")
     print("=" * 60)
-    print(f"文件: {args.file}")
-    print(f"Sheet: {args.sheet}")
-    print(f"颜色过滤: {'绿色' if filter_color == 'green' else '无'}")
+    print(f"文件: {file_path}")
+    print(f"Sheet: {sheet_name}")
+    print(f"颜色过滤: {'绿色' if color_filter == 'green' else '无'}")
     print(f"排除删除线: {'是' if exclude_strikethrough else '否'}")
     print("=" * 60)
     print()
@@ -73,8 +169,8 @@ def ping_ip_planning_main():
     # 读取 IP 地址
     try:
         ip_list = read_network_security_ips(
-            args.file,
-            filter_color=filter_color,
+            file_path,
+            filter_color=color_filter if color_filter != 'none' else None,
             exclude_strikethrough=exclude_strikethrough
         )
     except Exception as e:
@@ -98,7 +194,7 @@ def ping_ip_planning_main():
     server_ssh_pool = None
     source_ip = get_local_ip()
     
-    if not args.local:
+    if not use_local:
         # 尝试从 credentials.xlsx 中查找服务器
         try:
             import pandas as pd
@@ -139,10 +235,8 @@ def ping_ip_planning_main():
         print(f"测试来源: {source_ip} (本地)")
     
     # 确定并发数
-    if args.max_workers is None:
+    if max_workers is None:
         max_workers = 5 if server_ssh_pool else 20
-    else:
-        max_workers = args.max_workers
     
     print(f"并发数: {max_workers}")
     print()
@@ -221,15 +315,15 @@ def ping_ip_planning_main():
     # 写入日志文件
     log_dir = "./logs"
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"ping_results_{args.sheet.replace('&', '_')}.log")
+    log_file = os.path.join(log_dir, f"ping_results_{sheet_name.replace('&', '_')}.log")
     
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write(f"IP 地址规划表 Ping 测试结果\n")
         f.write("=" * 60 + "\n")
-        f.write(f"文件: {args.file}\n")
-        f.write(f"Sheet: {args.sheet}\n")
+        f.write(f"文件: {file_path}\n")
+        f.write(f"Sheet: {sheet_name}\n")
         f.write(f"测试来源: {source_ip}\n")
-        f.write(f"颜色过滤: {'绿色' if filter_color == 'green' else '无'}\n")
+        f.write(f"颜色过滤: {'绿色' if color_filter == 'green' else '无'}\n")
         f.write(f"排除删除线: {'是' if exclude_strikethrough else '否'}\n")
         f.write(f"总计 IP: {total}\n")
         f.write(f"可达 IP: {len(reachable)}\n")

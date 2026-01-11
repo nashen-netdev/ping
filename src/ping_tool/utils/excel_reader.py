@@ -190,7 +190,7 @@ def read_network_security_ips(file_path: str,
     Returns:
         list: [{'ip': '...', 'hostname': '...', 'row': ...}, ...]
     """
-    sheet_name = 'net&sec'
+    sheet_name = 'network&security'
     
     # 使用多种方式尝试读取数据
     print(f"正在读取 {file_path} 的 {sheet_name} sheet...")

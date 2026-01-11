@@ -56,7 +56,7 @@ run:
 
 # 运行 IP 规划表 Ping 工具
 run-ip-planning:
-	python3 -m ping_tool.cli_ip_planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+	python3 -m ping_tool.cli_ip_planning --file pass/IP地址规划表-金茂1.xlsx --sheet "net&sec"
 
 # 运行 IP 规划表演示脚本
 demo-ip-planning:
