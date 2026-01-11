@@ -176,21 +176,22 @@ def is_green_cell(style_info: Dict) -> bool:
     return False
 
 
-def read_network_security_ips(file_path: str, 
+def read_network_security_ips(file_path: str,
+                               sheet_name: str = 'network&security',
                                filter_color: Optional[str] = None,
                                exclude_strikethrough: bool = True) -> List[Dict]:
     """
-    从 net&sec sheet 读取网络和安全设备的 IP 地址和 hostname
+    从指定 sheet 读取网络和安全设备的 IP 地址和 hostname
     
     Args:
         file_path: Excel 文件路径
+        sheet_name: Sheet 页名称
         filter_color: 过滤颜色，'green' 表示只读取绿色单元格，None 表示不过滤
         exclude_strikethrough: 是否排除删除线单元格
         
     Returns:
         list: [{'ip': '...', 'hostname': '...', 'row': ...}, ...]
     """
-    sheet_name = 'network&security'
     
     # 使用多种方式尝试读取数据
     print(f"正在读取 {file_path} 的 {sheet_name} sheet...")

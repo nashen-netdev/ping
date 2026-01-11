@@ -81,15 +81,15 @@ class ConfigManager:
         return self.get_profile('default')
 
 
-def interactive_select_profile(config_manager: ConfigManager) -> Optional[Dict]:
+def interactive_select_environment(config_manager: ConfigManager) -> Optional[str]:
     """
-    交互式选择配置环境
+    交互式选择环境（第一步：选择项目）
     
     Args:
         config_manager: 配置管理器
         
     Returns:
-        选中的配置字典，如果取消返回 None
+        Excel 文件路径，如果取消或选择手动输入返回 None
     """
     profiles = config_manager.list_profiles()
     
@@ -97,34 +97,23 @@ def interactive_select_profile(config_manager: ConfigManager) -> Optional[Dict]:
         print("没有找到任何配置环境")
         return None
     
-    print()
-    print("=" * 70)
+    print("\n" + "=" * 70)
     print("可用的配置环境:")
     print("=" * 70)
     
     for i, profile_name in enumerate(profiles, 1):
-        info = config_manager.get_profile_info(profile_name)
-        print(f"  {i}. [{profile_name}] {info}")
+        profile = config_manager.get_profile(profile_name)
+        name = profile.get('name', profile_name)
+        print(f"  {i}. {name}")
     
-    print()
-    print("  0. 不使用配置，手动输入参数")
     print("=" * 70)
     
     while True:
         try:
-            choice = input("\n请选择配置环境（输入序号，回车使用默认）: ").strip()
+            choice = input("\n请选择环境（输入序号，回车进入手动输入）: ").strip()
             
-            # 回车使用默认
+            # 回车进入手动输入模式
             if not choice:
-                if 'default' in profiles:
-                    print("使用默认配置")
-                    return config_manager.get_profile('default')
-                else:
-                    print("没有默认配置，请选择一个")
-                    continue
-            
-            # 0 表示不使用配置
-            if choice == '0':
                 return None
             
             # 选择配置
@@ -132,15 +121,88 @@ def interactive_select_profile(config_manager: ConfigManager) -> Optional[Dict]:
             if 0 <= idx < len(profiles):
                 profile_name = profiles[idx]
                 profile = config_manager.get_profile(profile_name)
-                print(f"✓ 已选择配置: {profile_name}")
-                return profile
+                file_path = profile.get('file')
+                
+                # 检查文件是否存在
+                if not os.path.exists(file_path):
+                    print(f"✗ 错误: 文件不存在: {file_path}")
+                    retry = input("  重新选择? (y/n) [y]: ").strip().lower()
+                    if retry == 'n':
+                        return None
+                    continue
+                
+                print(f"✓ 已选择环境: {profile.get('name', profile_name)}")
+                print(f"  文件: {file_path}")
+                return file_path
             else:
-                print(f"无效的选择，请输入 0-{len(profiles)}")
+                print(f"无效的选择，请输入 1-{len(profiles)}")
         except ValueError:
             print("请输入有效的数字")
         except KeyboardInterrupt:
             print("\n\n已取消")
             return None
+
+
+def interactive_select_sheet() -> Optional[str]:
+    """
+    交互式选择 Sheet 页（第二步：必选）
+    
+    Returns:
+        Sheet 名称，如果取消返回 None
+    """
+    print("\n" + "=" * 70)
+    print("选择要测试的 Sheet 页:")
+    print("=" * 70)
+    print("  1. network&security（网络和安全）")
+    print("  2. server&security（服务器和安全）")
+    print("=" * 70)
+    
+    while True:
+        try:
+            choice = input("\n请选择 Sheet（必选，输入 q 退出）: ").strip()
+            
+            if choice.lower() == 'q':
+                return None
+            
+            if choice == '1':
+                print("✓ 已选择: network&security")
+                return "network&security"
+            elif choice == '2':
+                print("✓ 已选择: server&security")
+                return "server&security"
+            else:
+                print("无效的选择，请输入 1 或 2")
+        except KeyboardInterrupt:
+            print("\n\n已取消")
+            return None
+
+
+def interactive_select_color_filter() -> str:
+    """
+    交互式选择颜色过滤（第三步）
+    
+    Returns:
+        颜色过滤选项: 'green' 或 'none'
+    """
+    print("\n" + "=" * 70)
+    print("颜色过滤设置:")
+    print("=" * 70)
+    
+    while True:
+        try:
+            choice = input("是否只 ping 绿色单元格？(y/n) [n]: ").strip().lower()
+            
+            if not choice or choice == 'n':
+                print("✓ 不过滤颜色，ping 所有设备")
+                return 'none'
+            elif choice == 'y':
+                print("✓ 只 ping 绿色单元格")
+                return 'green'
+            else:
+                print("请输入 y 或 n")
+        except KeyboardInterrupt:
+            print("\n\n已取消")
+            return 'none'
 
 
 def interactive_input_config() -> Optional[Dict]:

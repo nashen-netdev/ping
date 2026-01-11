@@ -16,7 +16,13 @@ from .core.ssh import SSHClient, SSHConnectionPool
 from .utils.credentials import get_credentials
 from .utils.network import get_local_ip
 from .utils.excel_reader import read_network_security_ips, list_available_colors
-from .utils.config_manager import ConfigManager, interactive_select_profile, interactive_input_config
+from .utils.config_manager import (
+    ConfigManager, 
+    interactive_select_environment, 
+    interactive_select_sheet,
+    interactive_select_color_filter,
+    interactive_input_config
+)
 
 
 def ping_ip_planning_main():
@@ -108,16 +114,37 @@ def ping_ip_planning_main():
         print("\n欢迎使用 IP 地址规划表 Ping 工具")
         print("=" * 70)
         
-        # 先让用户选择是使用配置还是手动输入
+        # 第一步：选择环境（项目）
+        file_path = None
         if config_manager.list_profiles():
-            config = interactive_select_profile(config_manager)
+            file_path = interactive_select_environment(config_manager)
         
-        # 如果没有选择配置，进入手动输入模式
-        if config is None:
+        # 如果没有选择环境，进入手动输入模式
+        if file_path is None:
+            print("\n进入手动输入模式...")
             config = interactive_input_config()
             if config is None:
                 print("已退出")
                 return
+        else:
+            # 第二步：选择 Sheet（必选）
+            sheet_name = interactive_select_sheet()
+            if sheet_name is None:
+                print("已退出")
+                return
+            
+            # 第三步：颜色过滤
+            color_filter = interactive_select_color_filter()
+            
+            # 组装配置
+            config = {
+                'file': file_path,
+                'sheet': sheet_name,
+                'color_filter': color_filter,
+                'exclude_strikethrough': True,
+                'use_local': False,
+                'max_workers': None
+            }
     
     # 3. 使用命令行参数（优先级最高）
     if config:
@@ -170,6 +197,7 @@ def ping_ip_planning_main():
     try:
         ip_list = read_network_security_ips(
             file_path,
+            sheet_name=sheet_name,
             filter_color=color_filter if color_filter != 'none' else None,
             exclude_strikethrough=exclude_strikethrough
         )
