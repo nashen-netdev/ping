@@ -236,14 +236,15 @@ def interactive_input_config() -> Optional[Dict]:
     print()
     
     try:
-        # 1. 文件路径
+        # 1. 文件路径（必须输入，无默认值）
         while True:
-            file_path = input("Excel 文件路径 [pass/IP地址规划表-金茂1.xlsx]: ").strip()
+            file_path = input("Excel 文件路径: ").strip()
             if file_path.lower() == 'q':
                 return None
             
             if not file_path:
-                file_path = "pass/IP地址规划表-金茂1.xlsx"
+                print("✗ 请输入文件路径")
+                continue
             
             # 展开 ~ 符号并检查文件是否存在
             file_path = os.path.expanduser(file_path)
