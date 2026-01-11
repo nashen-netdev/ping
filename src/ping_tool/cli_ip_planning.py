@@ -20,6 +20,7 @@ from .utils.config_manager import (
     ConfigManager, 
     interactive_select_environment, 
     interactive_select_sheet,
+    interactive_select_column,
     interactive_select_color_filter,
     interactive_input_config
 )
@@ -133,16 +134,23 @@ def ping_ip_planning_main():
                 print("已退出")
                 return
             
-            # 第三步：颜色过滤
+            # 第三步：选择列（server&security 需要选择）
+            column = interactive_select_column(sheet_name)
+            if column is None:
+                print("已退出")
+                return
+            
+            # 第四步：颜色过滤
             color_filter = interactive_select_color_filter()
             
             # 组装配置
             config = {
                 'file': file_path,
                 'sheet': sheet_name,
+                'column': column,
                 'color_filter': color_filter,
                 'exclude_strikethrough': True,
-                'use_local': False,
+                'use_local': True,  # 统一使用本地 ping
                 'max_workers': None
             }
     
@@ -151,14 +159,16 @@ def ping_ip_planning_main():
         # 从配置中读取，但命令行参数可以覆盖
         file_path = args.file or config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
         sheet_name = args.sheet or config.get('sheet', 'net&sec')
+        column = config.get('column', 'MGMT')  # 从配置读取列名
         color_filter = args.color or config.get('color_filter', 'none')
         exclude_strikethrough = not args.no_exclude_strikethrough and config.get('exclude_strikethrough', True)
-        use_local = args.local or config.get('use_local', False)
+        use_local = args.local or config.get('use_local', True)
         max_workers = args.max_workers or config.get('max_workers')
     else:
         # 纯命令行模式
         file_path = args.file or 'pass/IP地址规划表-金茂1.xlsx'
         sheet_name = args.sheet or 'net&sec'
+        column = 'MGMT'  # 默认使用 MGMT 列
         color_filter = args.color or 'none'
         exclude_strikethrough = not args.no_exclude_strikethrough
         use_local = args.local
@@ -188,6 +198,7 @@ def ping_ip_planning_main():
     print("=" * 60)
     print(f"文件: {file_path}")
     print(f"Sheet: {sheet_name}")
+    print(f"Ping 列: {column}")
     print(f"颜色过滤: {'绿色' if color_filter == 'green' else '无'}")
     print(f"排除删除线: {'是' if exclude_strikethrough else '否'}")
     print("=" * 60)
@@ -198,6 +209,7 @@ def ping_ip_planning_main():
         ip_list = read_network_security_ips(
             file_path,
             sheet_name=sheet_name,
+            ip_column=column,
             filter_color=color_filter if color_filter != 'none' else None,
             exclude_strikethrough=exclude_strikethrough
         )

@@ -178,6 +178,7 @@ def is_green_cell(style_info: Dict) -> bool:
 
 def read_network_security_ips(file_path: str,
                                sheet_name: str = 'network&security',
+                               ip_column: str = 'MGMT',
                                filter_color: Optional[str] = None,
                                exclude_strikethrough: bool = True) -> List[Dict]:
     """
@@ -186,6 +187,7 @@ def read_network_security_ips(file_path: str,
     Args:
         file_path: Excel 文件路径
         sheet_name: Sheet 页名称
+        ip_column: 要 ping 的列名（'MGMT' 或 'IPMI'）
         filter_color: 过滤颜色，'green' 表示只读取绿色单元格，None 表示不过滤
         exclude_strikethrough: 是否排除删除线单元格
         
@@ -197,23 +199,23 @@ def read_network_security_ips(file_path: str,
     print(f"正在读取 {file_path} 的 {sheet_name} sheet...")
     df = read_excel_data_only(file_path, sheet_name)
     
-    # 查找表头行（包含 MGMT 和 hostname）
+    # 查找表头行（包含指定的 IP 列和 hostname）
     header_row_idx = None
-    mgmt_col_idx = None
+    ip_col_idx = None
     hostname_col_idx = None
     
     for idx, row in df.iterrows():
         row_values = [str(x).strip() if pd.notna(x) else '' for x in row.values]
-        if 'MGMT' in row_values and 'hostname' in row_values:
+        if ip_column in row_values and 'hostname' in row_values:
             header_row_idx = idx
-            mgmt_col_idx = row_values.index('MGMT')
+            ip_col_idx = row_values.index(ip_column)
             hostname_col_idx = row_values.index('hostname')
             print(f"找到表头行: 第{header_row_idx}行")
-            print(f"MGMT 列索引: {mgmt_col_idx}, hostname 列索引: {hostname_col_idx}")
+            print(f"{ip_column} 列索引: {ip_col_idx}, hostname 列索引: {hostname_col_idx}")
             break
     
     if header_row_idx is None:
-        raise ValueError(f"在 {sheet_name} sheet 中未找到包含 'MGMT' 和 'hostname' 的表头行")
+        raise ValueError(f"在 {sheet_name} sheet 中未找到包含 '{ip_column}' 和 'hostname' 的表头行")
     
     # 尝试读取样式信息（如果需要过滤颜色或删除线）
     style_map = {}
@@ -228,24 +230,24 @@ def read_network_security_ips(file_path: str,
     print(f"开始从第{data_start_row}行读取数据...")
     for idx in range(data_start_row, len(df)):
         row = df.iloc[idx]
-        mgmt_ip = row.iloc[mgmt_col_idx]
+        ip_address = row.iloc[ip_col_idx]
         hostname = row.iloc[hostname_col_idx]
         
         # 跳过空 IP
-        if pd.isna(mgmt_ip) or str(mgmt_ip).strip() == '':
+        if pd.isna(ip_address) or str(ip_address).strip() == '':
             continue
         
-        mgmt_ip = str(mgmt_ip).strip()
+        ip_address = str(ip_address).strip()
         hostname = str(hostname).strip() if pd.notna(hostname) else ''
         
         # 检查样式（Excel 行号从1开始，pandas 从0开始）
         excel_row = idx + 1
-        excel_col = mgmt_col_idx + 1
+        excel_col = ip_col_idx + 1
         style_info = style_map.get((excel_row, excel_col), {})
         
         # 过滤删除线
         if exclude_strikethrough and style_info.get('font_strikethrough', False):
-            print(f"跳过删除线 IP: {mgmt_ip} ({hostname})")
+            print(f"跳过删除线 IP: {ip_address} ({hostname})")
             continue
         
         # 过滤颜色
@@ -254,9 +256,9 @@ def read_network_security_ips(file_path: str,
                 continue
         
         results.append({
-            'ip': mgmt_ip,
+            'ip': ip_address,
             'hostname': hostname,
-            'row': idx
+            'row': excel_row
         })
     
     print(f"成功读取 {len(results)} 个 IP 地址")

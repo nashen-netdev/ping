@@ -193,9 +193,51 @@ def interactive_select_sheet() -> Optional[str]:
             return None
 
 
+def interactive_select_column(sheet_name: str) -> Optional[str]:
+    """
+    交互式选择要 ping 的列（仅用于 server&security）
+    
+    Args:
+        sheet_name: Sheet 名称
+        
+    Returns:
+        列名: 'MGMT' 或 'IPMI'，如果取消返回 None
+    """
+    # network&security 固定使用 MGMT 列
+    if sheet_name == "network&security":
+        return "MGMT"
+    
+    # server&security 需要选择
+    print("\n" + "=" * 70)
+    print("选择要 ping 的列:")
+    print("=" * 70)
+    print("  1. MGMT（管理网地址）")
+    print("  2. IPMI")
+    print("=" * 70)
+    
+    while True:
+        try:
+            choice = input("\n请选择列（输入 q 退出）: ").strip()
+            
+            if choice.lower() == 'q':
+                return None
+            
+            if choice == '1':
+                print("✓ 已选择: MGMT（管理网地址）")
+                return "MGMT"
+            elif choice == '2':
+                print("✓ 已选择: IPMI")
+                return "IPMI"
+            else:
+                print("无效的选择，请输入 1 或 2")
+        except KeyboardInterrupt:
+            print("\n\n已取消")
+            return None
+
+
 def interactive_select_color_filter() -> str:
     """
-    交互式选择颜色过滤（第三步）
+    交互式选择颜色过滤
     
     Returns:
         颜色过滤选项: 'green' 或 'none'
@@ -284,55 +326,24 @@ def interactive_input_config() -> Optional[Dict]:
             else:
                 print("无效的选择，请输入 1 或 2")
         
-        # 3. 颜色过滤（简单问答）
-        print()
-        print("=" * 70)
-        print("颜色过滤设置:")
-        print("=" * 70)
+        # 3. 选择列（server&security 需要选择，network&security 自动 MGMT）
+        column = interactive_select_column(sheet)
+        if column is None:
+            return None
         
-        while True:
-            choice = input("是否只 ping 绿色单元格？(y/n) [n]: ").strip().lower()
-            
-            if choice == 'q':
-                return None
-            
-            if not choice or choice == 'n':
-                print("✓ 不过滤颜色，ping 所有设备")
-                color_filter = 'none'
-                break
-            elif choice == 'y':
-                print("✓ 只 ping 绿色单元格")
-                color_filter = 'green'
-                break
-            else:
-                print("请输入 y 或 n")
+        # 4. 颜色过滤
+        color_filter = interactive_select_color_filter()
+        if color_filter is None:
+            return None
         
-        # 4. 排除删除线 - 默认排除，不询问
+        # 5. 排除删除线 - 默认排除，不询问
         exclude_strikethrough = True
         
-        # 5. 本地 ping - network&security 自动用本地，server&security 可选
-        if sheet == "network&security":
-            use_local = True
-            print("✓ network&security 使用本地 ping")
-        else:
-            # server&security 可以选择
-            print()
-            while True:
-                choice = input("使用本地 ping? (y/n) [n]: ").strip().lower()
-                if choice == 'q':
-                    return None
-                if not choice or choice == 'n':
-                    use_local = False
-                    print("✓ 使用远程 SSH ping")
-                    break
-                elif choice == 'y':
-                    use_local = True
-                    print("✓ 使用本地 ping")
-                    break
-                else:
-                    print("请输入 y 或 n")
+        # 6. 本地 ping - 统一使用本地 ping
+        use_local = True
+        print(f"✓ {sheet} 使用本地 ping")
         
-        # 6. 并发数 - 自动设置，不询问
+        # 7. 并发数 - 自动设置，不询问
         max_workers = None
         
         # 直接返回配置，不需要确认（与环境模式保持一致）
@@ -343,6 +354,7 @@ def interactive_input_config() -> Optional[Dict]:
             'description': '用户手动输入的配置',
             'file': file_path,
             'sheet': sheet,
+            'column': column,
             'color_filter': color_filter,
             'exclude_strikethrough': exclude_strikethrough,
             'use_local': use_local,
