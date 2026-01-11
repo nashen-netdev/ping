@@ -223,16 +223,16 @@ def interactive_select_color_filter() -> str:
 
 def interactive_input_config() -> Optional[Dict]:
     """
-    交互式输入配置信息
+    交互式输入配置信息（手动输入模式）
     
     Returns:
         配置字典，如果取消返回 None
     """
     print()
     print("=" * 70)
-    print("交互式配置")
+    print("手动输入模式")
     print("=" * 70)
-    print("提示: 直接回车使用默认值，输入 'q' 或 Ctrl+C 退出")
+    print("提示: 输入 'q' 或 Ctrl+C 可随时退出")
     print()
     
     try:
@@ -245,7 +245,9 @@ def interactive_input_config() -> Optional[Dict]:
             if not file_path:
                 file_path = "pass/IP地址规划表-金茂1.xlsx"
             
-            # 检查文件是否存在
+            # 展开 ~ 符号并检查文件是否存在
+            file_path = os.path.expanduser(file_path)
+            
             if os.path.exists(file_path):
                 print(f"✓ 文件存在: {file_path}")
                 break
@@ -255,40 +257,82 @@ def interactive_input_config() -> Optional[Dict]:
                 if retry == 'n':
                     return None
         
-        # 2. Sheet 页
-        sheet = input("Sheet 页名称 [net&sec]: ").strip()
-        if sheet.lower() == 'q':
-            return None
-        if not sheet:
-            sheet = "net&sec"
+        # 2. Sheet 页（二选一）
+        print()
+        print("=" * 70)
+        print("选择要测试的 Sheet 页:")
+        print("=" * 70)
+        print("  1. network&security（网络和安全）")
+        print("  2. server&security（服务器和安全）")
+        print("=" * 70)
         
-        # 3. 颜色过滤
-        color = input("颜色过滤 (green/none) [none]: ").strip().lower()
-        if color == 'q':
-            return None
-        if not color or color not in ['green', 'none']:
-            color = 'none'
+        while True:
+            choice = input("\n请选择 Sheet（输入 q 退出）: ").strip()
+            
+            if choice.lower() == 'q':
+                return None
+            
+            if choice == '1':
+                sheet = "network&security"
+                print("✓ 已选择: network&security")
+                break
+            elif choice == '2':
+                sheet = "server&security"
+                print("✓ 已选择: server&security")
+                break
+            else:
+                print("无效的选择，请输入 1 或 2")
         
-        # 4. 排除删除线
-        exclude = input("排除删除线的 IP? (y/n) [y]: ").strip().lower()
-        if exclude == 'q':
-            return None
-        exclude_strikethrough = exclude != 'n'
+        # 3. 颜色过滤（简单问答）
+        print()
+        print("=" * 70)
+        print("颜色过滤设置:")
+        print("=" * 70)
         
-        # 5. 本地 ping
-        local = input("使用本地 ping? (y/n) [n]: ").strip().lower()
-        if local == 'q':
-            return None
-        use_local = local == 'y'
+        while True:
+            choice = input("是否只 ping 绿色单元格？(y/n) [n]: ").strip().lower()
+            
+            if choice == 'q':
+                return None
+            
+            if not choice or choice == 'n':
+                print("✓ 不过滤颜色，ping 所有设备")
+                color_filter = 'none'
+                break
+            elif choice == 'y':
+                print("✓ 只 ping 绿色单元格")
+                color_filter = 'green'
+                break
+            else:
+                print("请输入 y 或 n")
         
-        # 6. 并发数
-        workers = input("并发数 (留空自动) [auto]: ").strip()
-        if workers.lower() == 'q':
-            return None
+        # 4. 排除删除线 - 默认排除，不询问
+        exclude_strikethrough = True
         
+        # 5. 本地 ping - network&security 自动用本地，server&security 可选
+        if sheet == "network&security":
+            use_local = True
+            print("✓ network&security 使用本地 ping")
+        else:
+            # server&security 可以选择
+            print()
+            while True:
+                choice = input("使用本地 ping? (y/n) [n]: ").strip().lower()
+                if choice == 'q':
+                    return None
+                if not choice or choice == 'n':
+                    use_local = False
+                    print("✓ 使用远程 SSH ping")
+                    break
+                elif choice == 'y':
+                    use_local = True
+                    print("✓ 使用本地 ping")
+                    break
+                else:
+                    print("请输入 y 或 n")
+        
+        # 6. 并发数 - 自动设置，不询问
         max_workers = None
-        if workers and workers.isdigit():
-            max_workers = int(workers)
         
         print()
         print("=" * 70)
@@ -296,10 +340,10 @@ def interactive_input_config() -> Optional[Dict]:
         print("=" * 70)
         print(f"  文件: {file_path}")
         print(f"  Sheet: {sheet}")
-        print(f"  颜色过滤: {color}")
-        print(f"  排除删除线: {'是' if exclude_strikethrough else '否'}")
+        print(f"  颜色过滤: {'绿色' if color_filter == 'green' else '无'}")
+        print(f"  排除删除线: 是（自动）")
         print(f"  本地 ping: {'是' if use_local else '否'}")
-        print(f"  并发数: {max_workers if max_workers else '自动'}")
+        print(f"  并发数: 自动")
         print("=" * 70)
         
         confirm = input("\n确认以上配置? (y/n) [y]: ").strip().lower()
@@ -308,11 +352,11 @@ def interactive_input_config() -> Optional[Dict]:
             return None
         
         return {
-            'name': '交互式配置',
+            'name': '手动输入配置',
             'description': '用户手动输入的配置',
             'file': file_path,
             'sheet': sheet,
-            'color_filter': color,
+            'color_filter': color_filter,
             'exclude_strikethrough': exclude_strikethrough,
             'use_local': use_local,
             'max_workers': max_workers
