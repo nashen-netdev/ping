@@ -1,6 +1,6 @@
 """
 配置管理模块
-支持从 YAML 配置文件读取和管理多个配置环境（profile）
+支持从 env/ 目录下的 YAML 文件读取和管理多个环境配置
 """
 import os
 import yaml
@@ -9,34 +9,50 @@ from typing import Dict, Optional, List
 
 
 class ConfigManager:
-    """配置管理器"""
+    """配置管理器 - 从 env/ 目录加载环境配置"""
     
-    def __init__(self, config_file: str = None):
+    def __init__(self, env_dir: str = None):
         """
         初始化配置管理器
         
         Args:
-            config_file: 配置文件路径，默认使用 configs/ip_planning_profiles.yaml
+            env_dir: 环境配置目录路径，默认使用项目根目录下的 env/
         """
-        if config_file is None:
-            # 默认配置文件路径
+        if env_dir is None:
+            # 默认环境配置目录
             project_root = Path(__file__).parent.parent.parent.parent
-            config_file = project_root / "configs" / "ip_planning_profiles.yaml"
+            env_dir = project_root / "env"
         
-        self.config_file = Path(config_file)
+        self.env_dir = Path(env_dir)
         self.profiles = {}
         
-        if self.config_file.exists():
-            self.load_profiles()
+        # 加载所有环境配置
+        self.load_profiles()
     
     def load_profiles(self):
-        """从 YAML 文件加载所有配置"""
+        """从 env/ 目录加载所有环境配置"""
+        if not self.env_dir.exists():
+            print(f"警告: 环境配置目录不存在: {self.env_dir}")
+            return False
+        
         try:
-            with open(self.config_file, 'r', encoding='utf-8') as f:
-                self.profiles = yaml.safe_load(f) or {}
+            # 扫描所有 .yaml 文件
+            for yaml_file in self.env_dir.glob("*.yaml"):
+                # 文件名（去除扩展名）作为环境 ID
+                env_id = yaml_file.stem
+                
+                # 读取配置
+                try:
+                    with open(yaml_file, 'r', encoding='utf-8') as f:
+                        config = yaml.safe_load(f)
+                        if config:
+                            self.profiles[env_id] = config
+                except Exception as e:
+                    print(f"警告: 无法加载环境配置 {yaml_file}: {e}")
+            
             return True
         except Exception as e:
-            print(f"警告: 无法加载配置文件 {self.config_file}: {e}")
+            print(f"警告: 扫描环境配置目录失败 {self.env_dir}: {e}")
             return False
     
     def get_profile(self, profile_name: str) -> Optional[Dict]:

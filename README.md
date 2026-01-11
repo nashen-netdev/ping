@@ -43,32 +43,46 @@ ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
 
 ### IP 地址规划表 Ping 功能（新功能）
 
-专门用于 ping IP 地址规划表中的设备：
+专门用于 ping IP 地址规划表中的设备，支持三步式交互流程：
 
 ```bash
-# 基本用法：ping net&sec sheet 的所有设备
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+# 方式 1：交互式模式（推荐，最简单）
+ping-ip-planning
+# 1. 选择环境（金茂/xxidc/xx项目）
+# 2. 选择 Sheet（network&security / server&security）
+# 3. 是否颜色过滤
 
-# 只 ping 绿色单元格的 IP（如果 Excel 格式支持）
-ping-ip-planning --sheet "net&sec" --color green
+# 方式 2：命令行模式
+ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "network&security"
+
+# 列出所有可用环境
+ping-ip-planning --list-profiles
 
 # 查看可用的颜色
 ping-ip-planning --list-colors
-
-# 使用本地 ping（不通过远程服务器）
-ping-ip-planning --local --max-workers 20
-
-# Ping 服务器&安全 sheet
-ping-ip-planning --sheet "服务器&安全"
 ```
 
 **功能特性：**
+- ✅ **三步式交互流程**：选择环境 → 选择 Sheet → 颜色过滤
+- ✅ **环境配置管理**：独立的环境配置文件，易于维护
 - ✅ 自动读取 MGMT 列的 IP 地址和 hostname
 - ✅ 支持按颜色过滤（绿色等，需要 Excel 格式支持）
 - ✅ 自动排除删除线的 IP 地址
 - ✅ 支持本地或远程 ping
 - ✅ 生成详细的测试报告（IP + hostname）
 - ✅ 自动统计可达率
+
+**环境配置：**
+
+环境配置文件位于 `env/` 目录，每个项目一个 YAML 文件：
+
+```yaml
+# env/jinmao.yaml
+name: "金茂"
+file: "pass/IP地址规划表-金茂1.xlsx"
+```
+
+添加新项目只需创建新的 YAML 文件即可！详见 [env/README.md](env/README.md)
 
 详细安装说明请查看 [docs/INSTALL.md](docs/INSTALL.md)
 

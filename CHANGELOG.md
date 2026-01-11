@@ -10,7 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Web界面开发
 - 异步支持（asyncio）
-- 配置文件自动加载
+
+## [2.2.0] - 2026-01-11
+
+### Added - 新增功能
+- ✨ 新增 `env/` 目录，独立管理项目环境配置
+- ✨ 环境配置文件独立化，每个项目一个 YAML 文件
+- ✨ 三步式交互流程：选择环境 → 选择 Sheet → 颜色过滤
+- ✨ 自动扫描 `env/` 目录加载所有环境配置
+- ✨ 新增环境配置文档 `env/README.md`
+- ✨ 新增详细交互流程文档 `docs/INTERACTIVE_FLOW.md`
+
+### Changed - 变更
+- 🔨 重构 `ConfigManager` 从目录扫描加载配置，而非单文件
+- 🔨 配置文件从 `configs/ip_planning_profiles.yaml` 迁移到 `env/*.yaml`
+- 🔨 简化环境配置格式，只需要 `name` 和 `file` 两个字段
+- 🔨 交互式流程重新设计，更适合非技术用户
+
+### Improved - 优化
+- ⚡ 环境管理更灵活，添加新项目只需创建新文件
+- ⚡ 配置结构更清晰，`configs/` 放应用配置，`env/` 放环境配置
+- ⚡ Sheet 选择改为必选，避免误操作
+- ⚡ 交互提示更友好，步骤更明确
+
+### Removed - 移除
+- ❌ 删除 `configs/ip_planning_profiles.yaml` 配置文件
+- ❌ 移除 YAML 文件中冗余的配置项（sheet、color_filter 等）
 
 ## [2.1.0] - 2026-01-10
 
