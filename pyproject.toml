@@ -45,6 +45,7 @@ dev = [
 [project.scripts]
 ping-tool = "ping_tool.cli:main"
 ping-ip-planning = "ping_tool.cli_ip_planning:ping_ip_planning_main"
+ping-env-add = "ping_tool.cli_env_add:main"
 
 [project.urls]
 Homepage = "https://github.com/yourorg/ping-tool"

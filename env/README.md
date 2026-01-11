@@ -26,6 +26,18 @@ file: "pass/IP地址规划表-金茂1.xlsx"
 
 ## ➕ 如何添加新环境
 
+### 方法 1：使用命令（推荐，最简单）
+
+```bash
+# 基本用法
+ping-env-add bj08 /path/to/IP地址规划表-金茂1.xlsx
+
+# 指定显示名称
+ping-env-add sh01 pass/file.xlsx --display-name "上海01机房"
+```
+
+### 方法 2：手动创建文件
+
 1. 在此目录下创建新的 `.yaml` 文件
 2. 文件名使用英文（将作为环境 ID）
 3. 填写配置内容

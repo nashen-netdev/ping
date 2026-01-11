@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✨ 环境配置文件独立化，每个项目一个 YAML 文件
 - ✨ 三步式交互流程：选择环境 → 选择 Sheet → 颜色过滤
 - ✨ 自动扫描 `env/` 目录加载所有环境配置
+- ✨ **新增 `ping-env-add` 命令**：快速创建环境配置
 - ✨ 新增环境配置文档 `env/README.md`
 - ✨ 新增详细交互流程文档 `docs/INTERACTIVE_FLOW.md`
 

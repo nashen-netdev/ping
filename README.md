@@ -82,7 +82,17 @@ name: "金茂"
 file: "pass/IP地址规划表-金茂1.xlsx"
 ```
 
-添加新项目只需创建新的 YAML 文件即可！详见 [env/README.md](env/README.md)
+**快速添加新环境：**
+
+```bash
+# 使用命令快速创建（推荐）
+ping-env-add bj08 /path/to/file.xlsx
+
+# 指定显示名称
+ping-env-add bj08 /path/to/file.xlsx --display-name "北京08机房"
+```
+
+详见 [env/README.md](env/README.md)
 
 详细安装说明请查看 [docs/INSTALL.md](docs/INSTALL.md)
 

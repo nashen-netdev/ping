@@ -25,6 +25,7 @@ MANIFEST
 .venv/
 venv/
 ENV/
+# 注意：不要忽略 env/ 目录（那是项目环境配置）
 
 # IDE
 .vscode/
