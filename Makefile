@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format clean run run-ip-planning demo-ip-planning
+.PHONY: help install install-dev test lint format clean clean-logs clean-all run run-ip-planning demo-ip-planning
 
 # 默认目标
 help:
@@ -9,7 +9,9 @@ help:
 	@echo "  make test          - 运行测试"
 	@echo "  make lint          - 运行代码检查"
 	@echo "  make format        - 格式化代码"
-	@echo "  make clean         - 清理临时文件"
+	@echo "  make clean         - 清理临时文件（Python缓存、编译文件等）"
+	@echo "  make clean-logs    - 清理旧日志文件（7天前）"
+	@echo "  make clean-all     - 深度清理（临时文件 + 日志 + 系统文件）"
 	@echo "  make run           - 运行程序"
 	@echo "  make run-ip-planning - 运行 IP 规划表 Ping 工具"
 	@echo "  make demo-ip-planning - 运行 IP 规划表演示脚本"
@@ -41,6 +43,7 @@ format:
 
 # 清理临时文件
 clean:
+	@echo "清理 Python 临时文件..."
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
@@ -48,7 +51,22 @@ clean:
 	find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name ".coverage" -delete
+	find . -type f -name ".DS_Store" -delete
+	find . -type f -name "*.swp" -delete
+	find . -type f -name "*.bak" -delete
+	find . -type f -name "*.tmp" -delete
 	rm -rf build/ dist/
+	@echo "✓ 清理完成"
+
+# 清理旧日志文件
+clean-logs:
+	@echo "清理 7 天前的日志文件..."
+	@find logs/ -name "*.log" -type f -mtime +7 -exec echo "  删除: {}" \; -delete 2>/dev/null || true
+	@echo "✓ 日志清理完成"
+
+# 深度清理（所有临时文件 + 日志）
+clean-all: clean clean-logs
+	@echo "✓ 深度清理完成！"
 
 # 运行程序
 run:
