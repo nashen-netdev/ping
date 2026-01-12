@@ -169,8 +169,8 @@ def interactive_select_sheet() -> Optional[str]:
     print("\n" + "=" * 70)
     print("选择要测试的 Sheet 页:")
     print("=" * 70)
-    print("  1. network&security（网络和安全）")
-    print("  2. server&security（服务器和安全）")
+    print("  1. network&security")
+    print("  2. server&security")
     print("=" * 70)
     
     while True:
