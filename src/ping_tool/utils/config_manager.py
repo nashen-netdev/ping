@@ -263,6 +263,81 @@ def interactive_select_color_filter() -> str:
             return 'none'
 
 
+def interactive_select_ping_mode(sheet_name: str) -> Optional[Dict]:
+    """
+    交互式选择 ping 模式（仅 server&security 需要）
+    
+    Args:
+        sheet_name: Sheet 名称
+        
+    Returns:
+        dict: ping 模式配置
+            {
+                'use_remote_server': bool,  # 是否从服务器ping
+                'server_identifier': str    # 服务器标识（hostname或IP）
+            }
+        如果取消返回 None
+    """
+    # 只有 server&security 需要选择 ping 模式
+    if sheet_name != "server&security":
+        return {
+            'use_remote_server': False,
+            'server_identifier': None
+        }
+    
+    print("\n" + "=" * 70)
+    print("Ping 模式选择:")
+    print("=" * 70)
+    print("  1. 从本地 ping（默认）")
+    print("  2. 从服务器 ping（登录到某台服务器后 ping 其他设备）")
+    print("=" * 70)
+    
+    while True:
+        try:
+            choice = input("\n请选择 Ping 模式（输入 q 退出）[1]: ").strip()
+            
+            # 默认选择本地 ping
+            if not choice:
+                choice = '1'
+            
+            if choice.lower() == 'q':
+                return None
+            
+            if choice == '1':
+                print("✓ 已选择: 从本地 ping")
+                return {
+                    'use_remote_server': False,
+                    'server_identifier': None
+                }
+            elif choice == '2':
+                # 从服务器 ping，需要输入服务器标识
+                print("✓ 已选择: 从服务器 ping")
+                print()
+                print("请输入要登录的服务器信息（hostname 或管理网IP地址）")
+                print("提示: 脚本将在 Excel 中查找该服务器并使用其 System User/Password 登录")
+                
+                while True:
+                    server_id = input("\n服务器标识（hostname或IP）: ").strip()
+                    
+                    if not server_id:
+                        print("✗ 请输入服务器标识")
+                        continue
+                    
+                    if server_id.lower() == 'q':
+                        return None
+                    
+                    print(f"✓ 将从服务器 '{server_id}' ping 其他设备")
+                    return {
+                        'use_remote_server': True,
+                        'server_identifier': server_id
+                    }
+            else:
+                print("无效的选择，请输入 1 或 2")
+        except KeyboardInterrupt:
+            print("\n\n已取消")
+            return None
+
+
 def interactive_input_config() -> Optional[Dict]:
     """
     交互式输入配置信息（手动输入模式）

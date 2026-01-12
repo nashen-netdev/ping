@@ -301,3 +301,122 @@ def list_available_colors(file_path: str, sheet_name: str = 'net&sec', column_na
             colors.add(style['fill_color'])
     
     return sorted(list(colors))
+
+
+def find_server_credentials(file_path: str,
+                            sheet_name: str = 'server&security',
+                            identifier: str = None) -> Optional[Dict]:
+    """
+    根据 hostname 或管理网IP地址查找服务器的登录凭据
+    
+    Args:
+        file_path: Excel 文件路径
+        sheet_name: Sheet 页名称（默认 'server&security'）
+        identifier: hostname 或 IP 地址（用于定位服务器行）
+        
+    Returns:
+        dict: 服务器信息
+            {
+                'hostname': '服务器名称',
+                'mgmt_ip': '管理网地址',
+                'username': 'System User',
+                'password': 'System Password',
+                'row': 行号
+            }
+        如果未找到返回 None
+    """
+    if not identifier:
+        return None
+    
+    print(f"正在读取 {file_path} 的 {sheet_name} sheet...")
+    df = read_excel_data_only(file_path, sheet_name)
+    
+    # 查找表头行
+    header_row_idx = None
+    hostname_col_idx = None
+    mgmt_ip_col_idx = None
+    username_col_idx = None
+    password_col_idx = None
+    
+    for idx, row in df.iterrows():
+        row_values = [str(x).strip() if pd.notna(x) else '' for x in row.values]
+        
+        # 查找所需的列
+        if 'hostname' in row_values:
+            header_row_idx = idx
+            hostname_col_idx = row_values.index('hostname')
+            
+            # 查找管理网地址列（可能是 '管理网地址' 或 'MGMT'）
+            if '管理网地址' in row_values:
+                mgmt_ip_col_idx = row_values.index('管理网地址')
+            elif 'MGMT' in row_values:
+                mgmt_ip_col_idx = row_values.index('MGMT')
+            
+            # 查找用户名和密码列
+            if 'System User' in row_values:
+                username_col_idx = row_values.index('System User')
+            if 'System Password' in row_values:
+                password_col_idx = row_values.index('System Password')
+            
+            print(f"找到表头行: 第{header_row_idx}行")
+            print(f"  hostname 列索引: {hostname_col_idx}")
+            print(f"  管理网IP 列索引: {mgmt_ip_col_idx}")
+            print(f"  System User 列索引: {username_col_idx}")
+            print(f"  System Password 列索引: {password_col_idx}")
+            break
+    
+    if header_row_idx is None:
+        raise ValueError(f"在 {sheet_name} sheet 中未找到包含 'hostname' 的表头行")
+    
+    if username_col_idx is None or password_col_idx is None:
+        raise ValueError(f"在 {sheet_name} sheet 中未找到 'System User' 或 'System Password' 列")
+    
+    # 在数据行中查找匹配的服务器
+    data_start_row = header_row_idx + 1
+    identifier_lower = identifier.strip().lower()
+    
+    print(f"开始查找服务器: {identifier}")
+    for idx in range(data_start_row, len(df)):
+        row = df.iloc[idx]
+        hostname = row.iloc[hostname_col_idx]
+        mgmt_ip = row.iloc[mgmt_ip_col_idx] if mgmt_ip_col_idx is not None else None
+        
+        # 跳过空行
+        if pd.isna(hostname) and (mgmt_ip is None or pd.isna(mgmt_ip)):
+            continue
+        
+        hostname_str = str(hostname).strip() if pd.notna(hostname) else ''
+        mgmt_ip_str = str(mgmt_ip).strip() if mgmt_ip is not None and pd.notna(mgmt_ip) else ''
+        
+        # 匹配 hostname 或管理网IP
+        if (hostname_str.lower() == identifier_lower or 
+            mgmt_ip_str.lower() == identifier_lower):
+            
+            # 读取用户名和密码
+            username = row.iloc[username_col_idx]
+            password = row.iloc[password_col_idx]
+            
+            username_str = str(username).strip() if pd.notna(username) else ''
+            password_str = str(password).strip() if pd.notna(password) else ''
+            
+            if not username_str:
+                print(f"✗ 找到服务器 {hostname_str}，但 System User 为空")
+                continue
+            
+            if not password_str:
+                print(f"✗ 找到服务器 {hostname_str}，但 System Password 为空")
+                continue
+            
+            excel_row = idx + 1
+            print(f"✓ 找到服务器: {hostname_str} ({mgmt_ip_str})")
+            
+            return {
+                'hostname': hostname_str,
+                'mgmt_ip': mgmt_ip_str,
+                'username': username_str,
+                'password': password_str,
+                'row': excel_row
+            }
+    
+    print(f"✗ 未找到匹配的服务器: {identifier}")
+    return None

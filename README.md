@@ -69,7 +69,9 @@ ping-ip-planning --list-colors
 - ✅ 支持按颜色过滤（绿色等，需要 Excel 格式支持）
 - ✅ 自动排除删除线的 IP 地址
 - ✅ 支持本地或远程 ping
-- ✅ 生成详细的测试报告（IP + hostname）
+- ✅ **🆕 从服务器 ping**：登录到指定服务器，从该服务器ping其他设备（server&security 专用）
+- ✅ **延迟质量分析**：自动分析 RTT（min/avg/max/mdev），识别高延迟 IP
+- ✅ 生成详细的测试报告（IP + hostname + 延迟统计）
 - ✅ 自动统计可达率
 
 **环境配置：**
@@ -294,6 +296,12 @@ ping-ip-planning --sheet "服务器&安全"      # ping 其他 sheet
 - ✅ 自动排除删除线的 IP 地址（默认开启）
 - ✅ 支持按颜色过滤（如只 ping 绿色单元格）
 - ✅ 支持本地或远程 ping
+- ✅ **🆕 从服务器 ping（server&security 专用）**：
+  - 提供 hostname 或管理网IP地址
+  - 自动从 Excel 中查找该服务器的 System User 和 System Password
+  - 使用这些凭据登录到该服务器
+  - 从该服务器 ping 其他目标设备
+  - 适用于需要从特定服务器测试网络连通性的场景
 - ✅ 生成详细的测试报告
 
 **颜色过滤说明：**

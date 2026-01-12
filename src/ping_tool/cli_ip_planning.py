@@ -15,13 +15,15 @@ from .core.ping import ping_ip_local, ping_ip_remote
 from .core.ssh import SSHClient, SSHConnectionPool
 from .utils.credentials import get_credentials
 from .utils.network import get_local_ip
-from .utils.excel_reader import read_network_security_ips, list_available_colors
+from .utils.excel_reader import read_network_security_ips, list_available_colors, find_server_credentials
+from .utils.analysis import analyze_ping_output
 from .utils.config_manager import (
     ConfigManager, 
     interactive_select_environment, 
     interactive_select_sheet,
     interactive_select_column,
     interactive_select_color_filter,
+    interactive_select_ping_mode,
     interactive_input_config
 )
 
@@ -140,7 +142,13 @@ def ping_ip_planning_main():
                 print("已退出")
                 return
             
-            # 第四步：颜色过滤
+            # 第四步：选择 ping 模式（server&security 需要）
+            ping_mode = interactive_select_ping_mode(sheet_name)
+            if ping_mode is None:
+                print("已退出")
+                return
+            
+            # 第五步：颜色过滤
             color_filter = interactive_select_color_filter()
             
             # 组装配置
@@ -150,7 +158,9 @@ def ping_ip_planning_main():
                 'column': column,
                 'color_filter': color_filter,
                 'exclude_strikethrough': True,
-                'use_local': True,  # 统一使用本地 ping
+                'use_local': not ping_mode.get('use_remote_server', False),
+                'use_remote_server': ping_mode.get('use_remote_server', False),
+                'server_identifier': ping_mode.get('server_identifier'),
                 'max_workers': None
             }
     
@@ -234,8 +244,51 @@ def ping_ip_planning_main():
     server_ssh_pool = None
     source_ip = get_local_ip()
     
-    if not use_local:
-        # 尝试从 credentials.xlsx 中查找服务器
+    # 检查是否从指定的服务器 ping（新功能）
+    use_remote_server = config and config.get('use_remote_server', False)
+    server_identifier = config and config.get('server_identifier')
+    
+    if use_remote_server and server_identifier:
+        # 从 Excel 中查找服务器凭据
+        print()
+        print("=" * 60)
+        print("正在查找服务器凭据...")
+        print("=" * 60)
+        try:
+            server_creds = find_server_credentials(file_path, sheet_name, server_identifier)
+            if server_creds:
+                server_ip = server_creds['mgmt_ip']
+                username = server_creds['username']
+                password = server_creds['password']
+                hostname = server_creds['hostname']
+                
+                print(f"服务器信息:")
+                print(f"  主机名: {hostname}")
+                print(f"  管理网IP: {server_ip}")
+                print(f"  用户名: {username}")
+                print()
+                
+                # 测试 SSH 连接
+                print(f"正在测试服务器连接...")
+                test_ssh = SSHClient(server_ip, username, password)
+                if test_ssh.connect():
+                    print(f"✓ 成功连接到服务器 {hostname} ({server_ip})")
+                    test_ssh.close()
+                    server_ssh_pool = SSHConnectionPool(server_ip, username, password)
+                    source_ip = server_ip
+                else:
+                    print(f"✗ 无法连接到服务器 {hostname} ({server_ip})，将使用本地 ping")
+            else:
+                print(f"✗ 未找到服务器 '{server_identifier}'，将使用本地 ping")
+        except Exception as e:
+            print(f"查找服务器凭据时出错: {e}")
+            import traceback
+            traceback.print_exc()
+            print("将使用本地 ping")
+        print("=" * 60)
+        print()
+    elif not use_local:
+        # 原有的逻辑：尝试从 credentials.xlsx 中查找服务器
         try:
             import pandas as pd
             creds_file = 'pass/credentials.xlsx'
@@ -330,6 +383,24 @@ def ping_ip_planning_main():
     if server_ssh_pool:
         print("\nSSH 连接已关闭")
     
+    # 分析延迟质量
+    print("\n正在分析延迟质量...")
+    latency_analysis = {}
+    high_latency_ips = []
+    
+    for item in reachable:
+        ip = item['ip']
+        output = ping_results.get(ip, '')
+        rtt_info = analyze_ping_output(output)
+        if rtt_info:
+            latency_analysis[ip] = rtt_info
+            # 识别高延迟IP（最大RTT > 1ms）
+            if rtt_info['max'] > 1.0:
+                high_latency_ips.append((ip, item['hostname'], rtt_info))
+    
+    # 按最大延迟从高到低排序
+    high_latency_ips.sort(key=lambda x: x[2]['max'], reverse=True)
+    
     # 输出统计信息
     print()
     print("=" * 60)
@@ -339,13 +410,28 @@ def ping_ip_planning_main():
     print(f"可达 IP 数量: {len(reachable)}")
     print(f"不可达 IP 数量: {len(unreachable)}")
     print(f"可达率: {len(reachable) / total * 100:.1f}%")
+    print(f"延迟质量较差 IP 数量: {len(high_latency_ips)} (最大RTT > 1ms)")
     print("=" * 60)
+    
+    # 输出高延迟IP
+    if high_latency_ips:
+        print(f"\n延迟质量较差的 IP ({len(high_latency_ips)}):")
+        print("（最大RTT > 1ms，按延迟从高到低排序）")
+        for ip, hostname, rtt_info in high_latency_ips[:10]:  # 只显示前10个
+            print(f"  ⚠ {ip:15s} ({hostname:30s})")
+            print(f"     最小延迟: {rtt_info['min']:.3f} ms, "
+                  f"平均延迟: {rtt_info['avg']:.3f} ms, "
+                  f"最大延迟: {rtt_info['max']:.3f} ms")
+        if len(high_latency_ips) > 10:
+            print(f"  ... 还有 {len(high_latency_ips) - 10} 个（详见日志文件）")
     
     # 输出详细结果
     if reachable:
         print(f"\n可达的 IP ({len(reachable)}):")
-        for item in reachable:
+        for item in reachable[:10]:  # 只显示前10个
             print(f"  ✓ {item['ip']:15s} ({item['hostname']})")
+        if len(reachable) > 10:
+            print(f"  ... 还有 {len(reachable) - 10} 个（详见日志文件）")
     
     if unreachable:
         print(f"\n不可达的 IP ({len(unreachable)}):")
@@ -358,36 +444,59 @@ def ping_ip_planning_main():
     log_file = os.path.join(log_dir, f"ping_results_{sheet_name.replace('&', '_')}.log")
     
     with open(log_file, 'w', encoding='utf-8') as f:
-        f.write(f"IP 地址规划表 Ping 测试结果\n")
-        f.write("=" * 60 + "\n")
-        f.write(f"文件: {file_path}\n")
-        f.write(f"Sheet: {sheet_name}\n")
+        # 总计统计信息
+        f.write(f"总计统计信息:\n")
+        f.write("-" * 40 + "\n")
         f.write(f"测试来源: {source_ip}\n")
-        f.write(f"颜色过滤: {'绿色' if color_filter == 'green' else '无'}\n")
-        f.write(f"排除删除线: {'是' if exclude_strikethrough else '否'}\n")
-        f.write(f"总计 IP: {total}\n")
-        f.write(f"可达 IP: {len(reachable)}\n")
-        f.write(f"不可达 IP: {len(unreachable)}\n")
-        f.write(f"可达率: {len(reachable) / total * 100:.1f}%\n")
-        f.write("=" * 60 + "\n\n")
+        f.write(f"总计ping的IP数量: {total}\n")
+        f.write(f"总计可达IP数量: {len(reachable)}\n")
+        f.write(f"总计不可达IP数量: {len(unreachable)}\n")
+        f.write(f"延迟质量较差IP数量: {len(high_latency_ips)} (最大RTT > 1ms)\n")
+        f.write("-" * 40 + "\n\n")
+        
+        # 延迟质量分析
+        if high_latency_ips:
+            f.write(f"延迟质量分析:\n")
+            f.write("-" * 40 + "\n")
+            f.write(f"以下IP的最大响应时间超过1ms:\n\n")
+            for ip, hostname, rtt_info in high_latency_ips:
+                f.write(f"IP: {ip} - {hostname}\n")
+                f.write(f"  最小延迟: {rtt_info['min']:.3f} ms\n")
+                f.write(f"  平均延迟: {rtt_info['avg']:.3f} ms\n")
+                f.write(f"  最大延迟: {rtt_info['max']:.3f} ms\n")
+                f.write(f"  延迟抖动: {rtt_info['mdev']:.3f} ms\n")
+                f.write("-" * 20 + "\n")
+            f.write("\n")
+        
+        # Ping测试详细信息
+        f.write(f"Ping测试详细信息:\n")
+        f.write("-" * 40 + "\n")
+        f.write(f"测试来源: {source_ip}\n")
+        f.write("-" * 40 + "\n\n")
         
         if reachable:
-            f.write(f"可达的 IP ({len(reachable)}):\n")
-            f.write("-" * 60 + "\n")
+            f.write(f"从 {source_ip} 可达的IP:\n\n")
             for item in reachable:
-                f.write(f"\n{item['ip']} - {item['hostname']}\n")
+                f.write(f"{item['ip']} - {item['hostname']}\n")
                 f.write("-" * 40 + "\n")
+                # 添加延迟分析信息
+                if item['ip'] in latency_analysis:
+                    rtt_info = latency_analysis[item['ip']]
+                    f.write(f"延迟统计: min={rtt_info['min']:.3f}ms, "
+                           f"avg={rtt_info['avg']:.3f}ms, "
+                           f"max={rtt_info['max']:.3f}ms, "
+                           f"mdev={rtt_info['mdev']:.3f}ms\n")
+                    f.write("-" * 40 + "\n")
                 f.write(ping_results.get(item['ip'], ''))
-                f.write("\n")
+                f.write("\n\n")
         
         if unreachable:
-            f.write(f"\n不可达的 IP ({len(unreachable)}):\n")
-            f.write("-" * 60 + "\n")
+            f.write(f"\n从 {source_ip} 不可达的IP:\n\n")
             for item in unreachable:
-                f.write(f"\n{item['ip']} - {item['hostname']}\n")
+                f.write(f"{item['ip']} - {item['hostname']}\n")
                 f.write("-" * 40 + "\n")
                 f.write(ping_results.get(item['ip'], ''))
-                f.write("\n")
+                f.write("\n\n")
     
     print(f"\n详细结果已写入: {log_file}")
     print("程序执行完成！")

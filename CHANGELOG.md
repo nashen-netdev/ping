@@ -11,6 +11,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Web界面开发
 - 异步支持（asyncio）
 
+## [2.3.0] - 2026-01-12
+
+### Added - 新增功能
+- ✨ **新增"从服务器 ping"功能**（server&security 专用）
+  - 支持用户指定服务器（通过 hostname 或管理网IP）
+  - 自动从 Excel 中查找服务器的 System User 和 System Password
+  - 使用服务器凭据登录后从该服务器 ping 其他设备
+  - 适用于需要从特定服务器视角测试网络连通性的场景
+- ✨ **新增延迟质量分析功能**（与标准 ping 工具保持一致）
+  - 自动分析所有可达 IP 的 RTT 信息（min/avg/max/mdev）
+  - 识别高延迟 IP（最大 RTT > 1ms）并按延迟排序
+  - 控制台显示延迟质量较差的 IP（前10个）
+  - 日志文件包含完整的延迟分析报告
+  - 每个可达 IP 详情中显示延迟统计
+- ✨ 新增 `find_server_credentials()` 函数：从 Excel 中查找服务器登录凭据
+- ✨ 新增 `interactive_select_ping_mode()` 函数：交互式选择 ping 模式
+- ✨ 新增详细功能文档 `docs/SERVER_PING_MODE.md`
+
+### Changed - 变更
+- 🔨 重构交互式流程，server&security sheet 增加 ping 模式选择步骤
+- 🔨 优化 SSH 连接逻辑，区分"从服务器 ping"和原有远程 ping
+- 🔨 重构日志输出格式，与标准 ping 工具保持一致
+
+### Improved - 优化
+- ⚡ 服务器查找支持 hostname 和 IP 两种方式
+- ⚡ 服务器凭据验证，确保 System User 和 System Password 不为空
+- ⚡ 连接失败时自动降级为本地 ping，提升容错性
+- ⚡ 详细的状态提示，便于用户了解执行流程
+- ⚡ 日志输出更结构化，包含延迟分析专区
+- ⚡ 控制台输出更简洁，只显示关键信息（前10个）
+
 ## [2.2.0] - 2026-01-11
 
 ### Added - 新增功能
