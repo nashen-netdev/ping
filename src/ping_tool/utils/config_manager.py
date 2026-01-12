@@ -201,18 +201,19 @@ def interactive_select_column(sheet_name: str) -> Optional[str]:
         sheet_name: Sheet 名称
         
     Returns:
-        列名: 'MGMT' 或 'IPMI'，如果取消返回 None
+        列名: 'MGMT'、'管理网地址' 或 'IPMI'，如果取消返回 None
     """
     # network&security 固定使用 MGMT 列
     if sheet_name == "network&security":
         return "MGMT"
     
-    # server&security 需要选择
+    # server&security 需要选择（3 个独立的列）
     print("\n" + "=" * 70)
     print("选择要 ping 的列:")
     print("=" * 70)
-    print("  1. MGMT（管理网地址）")
-    print("  2. IPMI")
+    print("  1. MGMT")
+    print("  2. 管理网地址")
+    print("  3. IPMI")
     print("=" * 70)
     
     while True:
@@ -223,13 +224,16 @@ def interactive_select_column(sheet_name: str) -> Optional[str]:
                 return None
             
             if choice == '1':
-                print("✓ 已选择: MGMT（管理网地址）")
+                print("✓ 已选择: MGMT")
                 return "MGMT"
             elif choice == '2':
+                print("✓ 已选择: 管理网地址")
+                return "管理网地址"
+            elif choice == '3':
                 print("✓ 已选择: IPMI")
                 return "IPMI"
             else:
-                print("无效的选择，请输入 1 或 2")
+                print("无效的选择，请输入 1、2 或 3")
         except KeyboardInterrupt:
             print("\n\n已取消")
             return None
