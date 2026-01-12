@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.0] - 2026-01-12
 
+### Removed - 移除功能
+- ❌ **移除 `cli_ip_planning.py` 中的 credentials.xlsx 跳板机识别逻辑**
+  - 删除从 credentials.xlsx 查找 server=1 跳板机的重复代码
+  - 明确职责划分：`cli.py` 专用于 credentials.xlsx，`cli_ip_planning.py` 专用于 IP 规划表
+  - `cli_ip_planning.py` 现在只使用 Excel 内置的 System User/Password
+  - 避免功能重复和用户困惑
+
 ### Added - 新增功能
 - ✨ **新增"从服务器 ping"功能**（server&security 专用）
   - 支持用户指定服务器（通过 hostname 或管理网IP）

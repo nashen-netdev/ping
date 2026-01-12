@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .core.ping import ping_ip_local, ping_ip_remote
 from .core.ssh import SSHClient, SSHConnectionPool
-from .utils.credentials import get_credentials
 from .utils.network import get_local_ip
 from .utils.excel_reader import read_network_security_ips, list_available_colors, find_server_credentials
 from .utils.analysis import analyze_ping_output
@@ -287,41 +286,8 @@ def ping_ip_planning_main():
             print("将使用本地 ping")
         print("=" * 60)
         print()
-    elif not use_local:
-        # 原有的逻辑：尝试从 credentials.xlsx 中查找服务器
-        try:
-            import pandas as pd
-            creds_file = 'pass/credentials.xlsx'
-            if os.path.exists(creds_file):
-                df = pd.read_excel(creds_file)
-                server_ips = []
-                for ip in df['IP'].tolist():
-                    creds = get_credentials(ip)
-                    if creds and creds.get('is_server'):
-                        server_ips.append(ip)
-                
-                if server_ips:
-                    server_ip = server_ips[0]
-                    server_credentials = get_credentials(server_ip)
-                    print(f"找到服务器: {server_ip}")
-                    
-                    # 创建 SSH 连接池
-                    username = server_credentials['username']
-                    password = server_credentials['password']
-                    key_file = os.path.join('./pass/key', username) if not password else None
-                    
-                    print(f"正在测试服务器连接...")
-                    test_ssh = SSHClient(server_ip, username, password, key_file)
-                    if test_ssh.connect():
-                        print(f"成功连接到服务器，将使用远程 ping")
-                        test_ssh.close()
-                        server_ssh_pool = SSHConnectionPool(server_ip, username, password, key_file)
-                        source_ip = server_ip
-                    else:
-                        print(f"无法连接到服务器，将使用本地 ping")
-        except Exception as e:
-            print(f"查找服务器时出错: {e}")
     
+    # 显示测试来源
     if server_ssh_pool:
         print(f"测试来源: {source_ip} (远程)")
     else:
