@@ -65,7 +65,8 @@ EOF
 ## 🔍 查看所有可用环境
 
 ```bash
-ping-ip-planning --list-profiles
+# 运行后会自动显示所有环境
+ping-ip-planning
 ```
 
 ## ⚠️ 注意事项

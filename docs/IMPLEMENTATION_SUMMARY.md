@@ -39,20 +39,13 @@
 新增 `ping-ip-planning` 命令：
 
 ```bash
-# 交互式模式
+# 交互式模式（唯一使用方式）
 ping-ip-planning
 
-# 配置文件模式
-ping-ip-planning --profile network_devices
-
-# 列出所有配置环境
-ping-ip-planning --list-profiles
-
-# 查看可用颜色
-ping-ip-planning --list-colors
-
-# 本地高并发
-ping-ip-planning --profile network_devices --local --max-workers 30
+# 可选参数（覆盖交互式选择）
+ping-ip-planning --color green           # 强制颜色过滤
+ping-ip-planning --local                 # 强制本地 ping
+ping-ip-planning --max-workers 30        # 设置并发数
 ```
 
 ## 📁 新增文件

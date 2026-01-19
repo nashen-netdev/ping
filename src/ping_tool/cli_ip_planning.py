@@ -2,9 +2,7 @@
 IP 地址规划表 Ping 工具 CLI (增强版)
 专门用于 ping IP 地址规划表中的设备
 
-支持两种使用模式：
-1. 配置文件模式：使用预定义的配置环境（profile）
-2. 交互式模式：通过问答方式输入配置
+交互式模式：通过问答方式选择环境和配置
 """
 import os
 import argparse
@@ -29,29 +27,22 @@ from .utils.config_manager import (
 def ping_ip_planning_main():
     """IP 地址规划表 Ping 工具主程序"""
     parser = argparse.ArgumentParser(
-        description='Ping IP 地址规划表中的设备',
+        description='Ping IP 地址规划表中的设备（交互式）',
         epilog="""
-使用模式:
-  1. 配置文件模式: 使用预定义配置
-     ping-ip-planning --profile network_devices
-     ping-ip-planning --profile servers
-  
-  2. 交互式模式: 无参数时自动进入
+使用方法:
+  直接运行进入交互式模式:
      ping-ip-planning
-     ping-ip-planning --interactive
+  
+  通过问答方式选择:
+    1. 选择环境（项目）
+    2. 选择 Sheet
+    3. 选择列和 ping 模式
+    4. 颜色过滤
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # 模式选择
-    parser.add_argument('--profile', '-p', 
-                        help='使用配置文件中的环境（如: default, network_devices, servers）')
-    parser.add_argument('--interactive', '-i', action='store_true',
-                        help='进入交互式模式')
-    parser.add_argument('--list-profiles', action='store_true',
-                        help='列出所有可用的配置环境')
-    
-    # 其他参数
+    # 可选参数（用于覆盖交互式选择）
     parser.add_argument('--color', '-c', choices=['green', 'none'],
                         help='过滤颜色: green=只 ping 绿色单元格, none=不过滤颜色')
     parser.add_argument('--no-exclude-strikethrough', action='store_true',
@@ -68,106 +59,69 @@ def ping_ip_planning_main():
     # 初始化配置管理器
     config_manager = ConfigManager()
     
-    # 处理 --list-profiles
-    if args.list_profiles:
-        print("\n可用的配置环境:")
-        print("=" * 70)
-        profiles = config_manager.list_profiles()
-        if profiles:
-            for profile_name in profiles:
-                info = config_manager.get_profile_info(profile_name)
-                print(f"  • {profile_name:20s} - {info}")
-        else:
-            print("  没有找到配置文件或配置为空")
-            print(f"  配置文件位置: {config_manager.config_file}")
-        print("=" * 70)
-        print("\n使用方法: ping-ip-planning --profile <环境名>")
-        return
+    # 进入交互式模式
+    print("\n欢迎使用 IP 地址规划表 Ping 工具")
+    print("=" * 70)
     
-    # 确定配置来源
-    config = None
+    # 第一步：选择环境（项目）
+    file_path = None
+    if config_manager.list_profiles():
+        file_path = interactive_select_environment(config_manager)
     
-    # 1. 如果指定了 --profile，使用配置文件
-    if args.profile:
-        config = config_manager.get_profile(args.profile)
-        if not config:
-            print(f"错误: 配置环境 '{args.profile}' 不存在")
-            profiles = config_manager.list_profiles()
-            if profiles:
-                print(f"可用的环境: {', '.join(profiles)}")
-                print("使用 --list-profiles 查看详细信息")
-            else:
-                print("没有找到任何配置环境")
+    # 如果没有选择环境，进入手动输入模式
+    if file_path is None:
+        print("\n进入手动输入模式...")
+        config = interactive_input_config()
+        if config is None:
+            print("已退出")
             return
-        print(f"✓ 使用配置环境: {args.profile}")
-        print(f"  {config.get('description', '')}")
-        print()
-    
-    # 2. 如果指定了 --interactive 或没有指定 --profile，进入交互模式
-    elif args.interactive or not args.profile:
-        print("\n欢迎使用 IP 地址规划表 Ping 工具")
-        print("=" * 70)
-        
-        # 第一步：选择环境（项目）
-        file_path = None
-        if config_manager.list_profiles():
-            file_path = interactive_select_environment(config_manager)
-        
-        # 如果没有选择环境，进入手动输入模式
-        if file_path is None:
-            print("\n进入手动输入模式...")
-            config = interactive_input_config()
-            if config is None:
-                print("已退出")
-                return
-        else:
-            # 第二步：选择 Sheet（必选）
-            sheet_name = interactive_select_sheet()
-            if sheet_name is None:
-                print("已退出")
-                return
-            
-            # 第三步：选择列（server&security 需要选择）
-            column = interactive_select_column(sheet_name)
-            if column is None:
-                print("已退出")
-                return
-            
-            # 第四步：选择 ping 模式（server&security 需要）
-            ping_mode = interactive_select_ping_mode(sheet_name)
-            if ping_mode is None:
-                print("已退出")
-                return
-            
-            # 第五步：颜色过滤
-            color_filter = interactive_select_color_filter()
-            
-            # 组装配置
-            config = {
-                'file': file_path,
-                'sheet': sheet_name,
-                'column': column,
-                'color_filter': color_filter,
-                'exclude_strikethrough': True,
-                'use_local': not ping_mode.get('use_remote_server', False),
-                'use_remote_server': ping_mode.get('use_remote_server', False),
-                'server_identifier': ping_mode.get('server_identifier'),
-                'max_workers': None
-            }
-    
-    # 3. 从配置中读取参数（命令行参数可以覆盖部分配置）
-    if config:
-        file_path = config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
-        sheet_name = config.get('sheet', 'net&sec')
-        column = config.get('column', 'MGMT')  # 从配置读取列名
-        color_filter = args.color or config.get('color_filter', 'none')
-        exclude_strikethrough = not args.no_exclude_strikethrough and config.get('exclude_strikethrough', True)
-        use_local = args.local or config.get('use_local', True)
-        max_workers = args.max_workers or config.get('max_workers')
     else:
-        # 不应该到达这里，如果没有配置应该在交互模式中创建
+        # 第二步：选择 Sheet（必选）
+        sheet_name = interactive_select_sheet()
+        if sheet_name is None:
+            print("已退出")
+            return
+        
+        # 第三步：选择列（server&security 需要选择）
+        column = interactive_select_column(sheet_name)
+        if column is None:
+            print("已退出")
+            return
+        
+        # 第四步：选择 ping 模式（server&security 需要）
+        ping_mode = interactive_select_ping_mode(sheet_name)
+        if ping_mode is None:
+            print("已退出")
+            return
+        
+        # 第五步：颜色过滤
+        color_filter = interactive_select_color_filter()
+        
+        # 组装配置
+        config = {
+            'file': file_path,
+            'sheet': sheet_name,
+            'column': column,
+            'color_filter': color_filter,
+            'exclude_strikethrough': True,
+            'use_local': not ping_mode.get('use_remote_server', False),
+            'use_remote_server': ping_mode.get('use_remote_server', False),
+            'server_identifier': ping_mode.get('server_identifier'),
+            'max_workers': None
+        }
+    
+    # 从配置中读取参数（命令行参数可以覆盖部分配置）
+    if not config:
         print("错误: 未获取到配置信息")
         return
+    
+    file_path = config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
+    sheet_name = config.get('sheet', 'net&sec')
+    column = config.get('column', 'MGMT')  # 从配置读取列名
+    color_filter = args.color or config.get('color_filter', 'none')
+    exclude_strikethrough = not args.no_exclude_strikethrough and config.get('exclude_strikethrough', True)
+    use_local = args.local or config.get('use_local', True)
+    max_workers = args.max_workers or config.get('max_workers')
     
     # 检查文件是否存在
     if not os.path.exists(file_path):

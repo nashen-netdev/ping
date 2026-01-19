@@ -87,7 +87,8 @@ server_identifier: "web-server-01"  # hostname 或 IP
 然后运行：
 
 ```bash
-ping-ip-planning --profile my_env
+# 运行后选择对应的环境
+ping-ip-planning
 ```
 
 ## 工作流程

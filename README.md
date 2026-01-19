@@ -57,23 +57,21 @@ ping-ip-planning
 
 ### IP 地址规划表 Ping 功能（新功能）
 
-专门用于 ping IP 地址规划表中的设备，支持交互式和配置文件两种模式：
+专门用于 ping IP 地址规划表中的设备，交互式操作，简单易用：
 
 ```bash
-# 方式 1：交互式模式（推荐，最简单）
+# 直接运行，进入交互式模式
 ping-ip-planning
+
+# 交互式流程：
 # 1. 选择环境（金茂/xxidc/xx项目）
 # 2. 选择 Sheet（network&security / server&security）
-# 3. 是否颜色过滤
+# 3. 选择列和 ping 模式
+# 4. 是否颜色过滤
 
-# 方式 2：配置文件模式
-ping-ip-planning --profile network_devices
-
-# 列出所有可用环境
-ping-ip-planning --list-profiles
-
-# 查看可用的颜色
-ping-ip-planning --list-colors
+# 可选参数（覆盖交互式选择）
+ping-ip-planning --color green    # 强制只 ping 绿色
+ping-ip-planning --local           # 强制使用本地 ping
 ```
 
 **功能特性：**
@@ -282,20 +280,13 @@ ping-tool
 专门用于 ping IP 地址规划表中的网络设备。
 
 ```bash
-# 交互式模式（推荐）
+# 交互式模式
 ping-ip-planning
 
-# 配置文件模式
-ping-ip-planning --profile network_devices
-
-# 列出所有可用配置环境
-ping-ip-planning --list-profiles
-
-# 其他有用的命令
-ping-ip-planning --list-colors            # 列出可用的颜色
-ping-ip-planning --color green            # 过滤颜色（配合配置文件使用）
-ping-ip-planning --local                  # 强制使用本地 ping
-ping-ip-planning --max-workers 10         # 设置并发数
+# 可选参数（覆盖交互式选择）
+ping-ip-planning --color green      # 强制只 ping 绿色单元格
+ping-ip-planning --local             # 强制使用本地 ping
+ping-ip-planning --max-workers 10    # 设置并发数
 ```
 
 #### IP 地址规划表功能说明

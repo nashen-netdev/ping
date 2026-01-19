@@ -9,17 +9,14 @@
 cd /Users/sen/automate/Network_Projects/ethernet/ping
 source .venv/bin/activate
 
-# 交互式模式（推荐）
+# 直接运行（交互式模式）
 ping-ip-planning
-
-# 配置文件模式
-ping-ip-planning --profile network_devices
 
 # 或使用 Python 模块方式
 python3 -m ping_tool.cli_ip_planning
 ```
 
-### 2. 交互式使用
+### 2. 交互式流程
 
 运行后会引导你进行选择：
 
@@ -30,7 +27,8 @@ $ ping-ip-planning
 ======================================================================
 1. 选择环境（金茂/xxidc/xx项目）
 2. 选择 Sheet（network&security / server&security）
-3. 是否颜色过滤
+3. 选择列和 ping 模式
+4. 是否颜色过滤
 
 ============================================================
 IP 地址规划表 Ping 工具
@@ -54,20 +52,12 @@ MGMT 列索引: 11, hostname 列索引: 10
 
 ## 命令行参数
 
-### 模式选择参数
-
-| 参数 | 简写 | 说明 |
-|------|------|------|
-| `--profile` | `-p` | 使用配置文件中的环境（如: network_devices, servers） |
-| `--interactive` | `-i` | 进入交互式模式 |
-| `--list-profiles` | - | 列出所有可用的配置环境 |
-
-### 可选参数
+所有参数都是可选的，用于覆盖交互式选择：
 
 | 参数 | 简写 | 说明 | 默认值 |
 |------|------|------|--------|
-| `--color` | `-c` | 颜色过滤（green/none） | `none` |
-| `--local` | - | 强制使用本地 ping | False |
+| `--color` | `-c` | 颜色过滤（green/none） | 交互式选择 |
+| `--local` | - | 强制使用本地 ping | 交互式选择 |
 | `--max-workers` | - | 并发数 | 自动（远程5，本地20） |
 | `--list-colors` | - | 列出可用颜色 | - |
 | `--no-exclude-strikethrough` | - | 不排除删除线 | False |
@@ -77,25 +67,17 @@ MGMT 列索引: 11, hostname 列索引: 10
 ### 场景 1：快速测试网络设备
 
 ```bash
-# 交互式模式（推荐）
+# 交互式模式
 ping-ip-planning
-# 然后选择：环境 -> Sheet -> 颜色过滤
+# 然后选择：环境 -> Sheet -> 列 -> ping模式 -> 颜色过滤
 ```
 
-### 场景 2：使用配置文件快速执行
+### 场景 2：只测试绿色标记的设备
 
 ```bash
-# 使用预定义的配置
-ping-ip-planning --profile network_devices
-```
-
-### 场景 3：只测试绿色标记的设备
-
-```bash
-# 方式 1：配置文件 + 命令行参数覆盖
-ping-ip-planning --profile network_devices --color green
-
-# 方式 2：交互式选择
+# 运行时强制过滤绿色
+ping-ip-planning --color green
+# 然后正常进行交互式选择
 ping-ip-planning
 # 然后输入 y
 ```

@@ -64,7 +64,6 @@ ping-env-add sh01 pass/IP地址规划表-上海.xlsx --display-name "上海01机
 
 💡 使用方法:
   ping-ip-planning           # 交互式选择，可以看到新环境
-  ping-ip-planning --list-profiles  # 列出所有环境
 ```
 
 ### 方法 2：手动创建文件
@@ -78,46 +77,36 @@ name: "我的项目"
 file: "pass/IP地址规划表-myproject.xlsx"
 EOF
 
-# 2. 验证配置
-ping-ip-planning --list-profiles
+# 2. 验证配置（运行后会列出所有环境）
+ping-ip-planning
 ```
 
 ---
 
 ## 📝 查看环境列表
 
-### 命令行查看
+### 查看方法
 
 ```bash
-# 列出所有环境
-ping-ip-planning --list-profiles
+# 运行工具，会自动显示所有可用环境
+ping-ip-planning
 ```
 
 **输出示例：**
 
 ```
+欢迎使用 IP 地址规划表 Ping 工具
+======================================================================
 可用的配置环境:
 ======================================================================
-  • bj08     - 北京08机房: 无描述
-  • jinmao   - 金茂: 无描述
-  • sh01     - 上海01机房: 无描述
-  • xxidc    - xxidc: 无描述
-======================================================================
-```
-
-### 交互式查看
-
-```bash
-# 启动交互模式
-ping-ip-planning
-
-# 显示所有可选环境
-可用的配置环境:
   1. 北京08机房
   2. 金茂
   3. 上海01机房
   4. xxidc
+======================================================================
+请选择环境（输入序号，回车进入手动输入）:
 ```
+
 
 ---
 
@@ -155,8 +144,8 @@ name: "新的显示名称"
 # 删除环境配置
 rm env/bj08.yaml
 
-# 验证已删除
-ping-ip-planning --list-profiles
+# 验证已删除（运行后不会再看到该环境）
+ping-ip-planning
 ```
 
 ---
@@ -169,8 +158,8 @@ ping-ip-planning --list-profiles
 # 重命名文件
 mv env/old_name.yaml env/new_name.yaml
 
-# 新环境 ID 立即生效
-ping-ip-planning --list-profiles
+# 新环境 ID 立即生效（运行后会看到新名称）
+ping-ip-planning
 ```
 
 ---
@@ -244,7 +233,7 @@ file: "/Users/sen/Desktop/IP地址规划表-金茂1.xlsx"
 ```bash
 # 创建后立即使用
 ping-env-add bj08 /path/to/file.xlsx
-ping-ip-planning  # 立即可以看到 bj08 环境
+ping-ip-planning  # 立即可以选择 bj08 环境
 ```
 
 ### Q4: 可以批量创建环境吗？
@@ -261,7 +250,7 @@ ping-env-add sh01 pass/IP地址规划表-sh01.xlsx -n "上海01机房"
 ping-env-add sh02 pass/IP地址规划表-sh02.xlsx -n "上海02机房"
 
 echo "批量创建完成！"
-ping-ip-planning --list-profiles
+ping-ip-planning  # 运行后可看到所有新创建的环境
 ```
 
 ### Q5: 环境配置需要提交到 Git 吗？
@@ -329,10 +318,7 @@ env/
 # 创建环境
 ping-env-add <id> <file> [-n "名称"]
 
-# 列出环境
-ping-ip-planning --list-profiles
-
-# 使用环境（交互式）
+# 使用环境（交互式，会自动显示所有可用环境）
 ping-ip-planning
 
 # 查看帮助
@@ -352,15 +338,13 @@ ping-ip-planning --help
 
 ## 💡 小技巧
 
-### 快速切换环境
+### 快速访问
 
 ```bash
-# 保存常用环境的快捷方式
-alias ping-prod="ping-ip-planning --profile prod"
-alias ping-test="ping-ip-planning --profile test"
+# 直接运行，交互式选择环境
+ping-ip-planning
 
-# 使用
-ping-prod  # 直接使用生产环境配置
+# 每次运行时会列出所有可用环境供选择
 ```
 
 ### 备份环境配置

@@ -206,8 +206,8 @@ ping-env-add bj08 pass/IP规划表-北京.xlsx --display-name "北京08机房"
 # 查看帮助
 ping-ip-planning --help
 
-# 列出所有环境
-ping-ip-planning --list-profiles
+# 查看所有可用环境（运行后会列出）
+ping-ip-planning
 
 # 查看版本
 python3 -c "import ping_tool; print(ping_tool.__version__)"
