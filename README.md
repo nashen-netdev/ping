@@ -52,12 +52,12 @@ ping-tool
 python3 ping.py
 
 # 使用 IP 地址规划表 Ping 工具
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+ping-ip-planning
 ```
 
 ### IP 地址规划表 Ping 功能（新功能）
 
-专门用于 ping IP 地址规划表中的设备，支持三步式交互流程：
+专门用于 ping IP 地址规划表中的设备，支持交互式和配置文件两种模式：
 
 ```bash
 # 方式 1：交互式模式（推荐，最简单）
@@ -66,8 +66,8 @@ ping-ip-planning
 # 2. 选择 Sheet（network&security / server&security）
 # 3. 是否颜色过滤
 
-# 方式 2：命令行模式
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "network&security"
+# 方式 2：配置文件模式
+ping-ip-planning --profile network_devices
 
 # 列出所有可用环境
 ping-ip-planning --list-profiles
@@ -282,20 +282,20 @@ ping-tool
 专门用于 ping IP 地址规划表中的网络设备。
 
 ```bash
-# 基本用法
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+# 交互式模式（推荐）
+ping-ip-planning
 
-# 完整参数说明
-ping-ip-planning \
-    --file pass/IP地址规划表-金茂.xlsx \  # Excel 文件路径
-    --sheet "net&sec" \                    # Sheet 页名称
-    --color green \                        # 只 ping 绿色单元格（可选）
-    --local \                              # 使用本地 ping（不使用远程）
-    --max-workers 10                       # 并发数
+# 配置文件模式
+ping-ip-planning --profile network_devices
+
+# 列出所有可用配置环境
+ping-ip-planning --list-profiles
 
 # 其他有用的命令
 ping-ip-planning --list-colors            # 列出可用的颜色
-ping-ip-planning --sheet "服务器&安全"      # ping 其他 sheet
+ping-ip-planning --color green            # 过滤颜色（配合配置文件使用）
+ping-ip-planning --local                  # 强制使用本地 ping
+ping-ip-planning --max-workers 10         # 设置并发数
 ```
 
 #### IP 地址规划表功能说明

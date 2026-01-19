@@ -247,11 +247,15 @@ pip3 install -r requirements.txt
 
 **解决**：
 ```bash
-# 确保文件在 pass/ 目录下
-ls pass/
+# 使用交互式模式
+ping-ip-planning
+# 然后选择正确的环境配置
 
-# 或使用绝对路径
-ping-ip-planning --file /完整路径/到/你的文件.xlsx
+# 或检查配置文件中的路径
+cat env/你的环境.yaml
+
+# 确保文件在正确的位置
+ls pass/
 ```
 
 ### Q4: 测试结果在哪里？

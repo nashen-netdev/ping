@@ -241,9 +241,12 @@ source .venv/bin/activate
 # 1. 检查文件在哪
 ls pass/
 
-# 2. 使用正确的文件名（包括中文、空格等）
-# 如果文件名有空格，用引号括起来：
-ping-ip-planning --file "pass/IP 规划表.xlsx"
+# 2. 使用交互式模式
+ping-ip-planning
+# 然后选择正确的环境配置
+
+# 3. 或者检查配置文件中的路径
+cat env/你的环境.yaml
 ```
 
 ---

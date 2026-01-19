@@ -39,17 +39,20 @@
 新增 `ping-ip-planning` 命令：
 
 ```bash
-# 基本用法
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+# 交互式模式
+ping-ip-planning
 
-# 只 ping 绿色单元格
-ping-ip-planning --color green
+# 配置文件模式
+ping-ip-planning --profile network_devices
+
+# 列出所有配置环境
+ping-ip-planning --list-profiles
 
 # 查看可用颜色
 ping-ip-planning --list-colors
 
 # 本地高并发
-ping-ip-planning --local --max-workers 30
+ping-ip-planning --profile network_devices --local --max-workers 30
 ```
 
 ## 📁 新增文件

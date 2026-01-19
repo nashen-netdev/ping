@@ -2,10 +2,9 @@
 IP 地址规划表 Ping 工具 CLI (增强版)
 专门用于 ping IP 地址规划表中的设备
 
-支持三种使用模式：
-1. 命令行参数模式：直接指定所有参数
-2. 配置文件模式：使用预定义的配置环境（profile）
-3. 交互式模式：通过问答方式输入配置
+支持两种使用模式：
+1. 配置文件模式：使用预定义的配置环境（profile）
+2. 交互式模式：通过问答方式输入配置
 """
 import os
 import argparse
@@ -33,14 +32,11 @@ def ping_ip_planning_main():
         description='Ping IP 地址规划表中的设备',
         epilog="""
 使用模式:
-  1. 命令行模式: 直接指定参数
-     ping-ip-planning --file xxx.xlsx --sheet "net&sec"
-  
-  2. 配置文件模式: 使用预定义配置
+  1. 配置文件模式: 使用预定义配置
      ping-ip-planning --profile network_devices
      ping-ip-planning --profile servers
   
-  3. 交互式模式: 无参数时自动进入
+  2. 交互式模式: 无参数时自动进入
      ping-ip-planning
      ping-ip-planning --interactive
         """,
@@ -55,11 +51,7 @@ def ping_ip_planning_main():
     parser.add_argument('--list-profiles', action='store_true',
                         help='列出所有可用的配置环境')
     
-    # 文件参数
-    parser.add_argument('--file', '-f',
-                        help='IP 地址规划表文件路径')
-    parser.add_argument('--sheet', '-s',
-                        help='Sheet 页名称，可选: net&sec, 服务器&安全')
+    # 其他参数
     parser.add_argument('--color', '-c', choices=['green', 'none'],
                         help='过滤颜色: green=只 ping 绿色单元格, none=不过滤颜色')
     parser.add_argument('--no-exclude-strikethrough', action='store_true',
@@ -111,8 +103,8 @@ def ping_ip_planning_main():
         print(f"  {config.get('description', '')}")
         print()
     
-    # 2. 如果指定了 --interactive 或没有任何参数，进入交互模式
-    elif args.interactive or not any([args.file, args.sheet, args.color]):
+    # 2. 如果指定了 --interactive 或没有指定 --profile，进入交互模式
+    elif args.interactive or not args.profile:
         print("\n欢迎使用 IP 地址规划表 Ping 工具")
         print("=" * 70)
         
@@ -163,25 +155,19 @@ def ping_ip_planning_main():
                 'max_workers': None
             }
     
-    # 3. 使用命令行参数（优先级最高）
+    # 3. 从配置中读取参数（命令行参数可以覆盖部分配置）
     if config:
-        # 从配置中读取，但命令行参数可以覆盖
-        file_path = args.file or config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
-        sheet_name = args.sheet or config.get('sheet', 'net&sec')
+        file_path = config.get('file', 'pass/IP地址规划表-金茂1.xlsx')
+        sheet_name = config.get('sheet', 'net&sec')
         column = config.get('column', 'MGMT')  # 从配置读取列名
         color_filter = args.color or config.get('color_filter', 'none')
         exclude_strikethrough = not args.no_exclude_strikethrough and config.get('exclude_strikethrough', True)
         use_local = args.local or config.get('use_local', True)
         max_workers = args.max_workers or config.get('max_workers')
     else:
-        # 纯命令行模式
-        file_path = args.file or 'pass/IP地址规划表-金茂1.xlsx'
-        sheet_name = args.sheet or 'net&sec'
-        column = 'MGMT'  # 默认使用 MGMT 列
-        color_filter = args.color or 'none'
-        exclude_strikethrough = not args.no_exclude_strikethrough
-        use_local = args.local
-        max_workers = args.max_workers
+        # 不应该到达这里，如果没有配置应该在交互模式中创建
+        print("错误: 未获取到配置信息")
+        return
     
     # 检查文件是否存在
     if not os.path.exists(file_path):

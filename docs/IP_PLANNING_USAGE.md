@@ -9,20 +9,28 @@
 cd /Users/sen/automate/Network_Projects/ethernet/ping
 source .venv/bin/activate
 
-# 基本用法：ping net&sec sheet 的所有设备
-ping-ip-planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+# 交互式模式（推荐）
+ping-ip-planning
+
+# 配置文件模式
+ping-ip-planning --profile network_devices
 
 # 或使用 Python 模块方式
-python3 -m ping_tool.cli_ip_planning --file pass/IP地址规划表-金茂.xlsx --sheet "net&sec"
+python3 -m ping_tool.cli_ip_planning
 ```
 
 ### 2. 交互式使用
 
-运行时会询问是否只 ping 绿色单元格：
+运行后会引导你进行选择：
 
 ```bash
-$ ping-ip-planning --sheet "net&sec"
-是否只 ping 绿色单元格？(y/n，默认 n): n
+$ ping-ip-planning
+
+欢迎使用 IP 地址规划表 Ping 工具
+======================================================================
+1. 选择环境（金茂/xxidc/xx项目）
+2. 选择 Sheet（network&security / server&security）
+3. 是否颜色过滤
 
 ============================================================
 IP 地址规划表 Ping 工具
@@ -46,16 +54,18 @@ MGMT 列索引: 11, hostname 列索引: 10
 
 ## 命令行参数
 
-### 必需参数
+### 模式选择参数
 
-无，所有参数都有默认值。
+| 参数 | 简写 | 说明 |
+|------|------|------|
+| `--profile` | `-p` | 使用配置文件中的环境（如: network_devices, servers） |
+| `--interactive` | `-i` | 进入交互式模式 |
+| `--list-profiles` | - | 列出所有可用的配置环境 |
 
 ### 可选参数
 
 | 参数 | 简写 | 说明 | 默认值 |
 |------|------|------|--------|
-| `--file` | `-f` | Excel 文件路径 | `pass/IP地址规划表-金茂.xlsx` |
-| `--sheet` | `-s` | Sheet 页名称 | `net&sec` |
 | `--color` | `-c` | 颜色过滤（green/none） | `none` |
 | `--local` | - | 强制使用本地 ping | False |
 | `--max-workers` | - | 并发数 | 自动（远程5，本地20） |
@@ -64,18 +74,26 @@ MGMT 列索引: 11, hostname 列索引: 10
 
 ## 使用场景
 
-### 场景 1：快速测试所有网络设备
+### 场景 1：快速测试网络设备
 
 ```bash
-# 默认配置，测试所有 net&sec 设备
+# 交互式模式（推荐）
 ping-ip-planning
+# 然后选择：环境 -> Sheet -> 颜色过滤
 ```
 
-### 场景 2：只测试绿色标记的设备
+### 场景 2：使用配置文件快速执行
 
 ```bash
-# 方式 1：命令行指定
-ping-ip-planning --color green
+# 使用预定义的配置
+ping-ip-planning --profile network_devices
+```
+
+### 场景 3：只测试绿色标记的设备
+
+```bash
+# 方式 1：配置文件 + 命令行参数覆盖
+ping-ip-planning --profile network_devices --color green
 
 # 方式 2：交互式选择
 ping-ip-planning
