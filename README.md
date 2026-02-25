@@ -53,29 +53,31 @@ python3 ping.py
 
 # 使用 IP 地址规划表 Ping 工具
 ping-ip-planning
+
+# 快速 ping 一个网段
+ping-ip-planning 192.168.1.0/24
 ```
 
 ### IP 地址规划表 Ping 功能（新功能）
 
-专门用于 ping IP 地址规划表中的设备，交互式操作，简单易用：
+专门用于 ping IP 地址规划表中的设备，支持网段扫描和交互式操作：
 
 ```bash
-# 直接运行，进入交互式模式
-ping-ip-planning
+# 网段模式：快速扫描整个网段
+ping-ip-planning 192.168.1.0/24
+ping-ip-planning 10.201.232.0/24 --max-workers 50
 
-# 交互式流程：
+# 交互式模式：无参数时自动进入
+ping-ip-planning
 # 1. 选择环境（金茂/xxidc/xx项目）
 # 2. 选择 Sheet（network&security / server&security）
 # 3. 选择列和 ping 模式
 # 4. 是否颜色过滤
-
-# 可选参数（覆盖交互式选择）
-ping-ip-planning --color green    # 强制只 ping 绿色
-ping-ip-planning --local           # 强制使用本地 ping
 ```
 
 **功能特性：**
-- ✅ **三步式交互流程**：选择环境 → 选择 Sheet → 颜色过滤
+- ✅ **网段扫描**：直接传入 CIDR 网段快速 ping（如 `192.168.1.0/24`）
+- ✅ **交互式流程**：选择环境 → 选择 Sheet → 列和模式 → 颜色过滤
 - ✅ **环境配置管理**：独立的环境配置文件，易于维护
 - ✅ 自动读取 MGMT 列的 IP 地址和 hostname
 - ✅ 支持按颜色过滤（绿色等，需要 Excel 格式支持）
@@ -280,13 +282,12 @@ ping-tool
 专门用于 ping IP 地址规划表中的网络设备。
 
 ```bash
-# 交互式模式
-ping-ip-planning
+# 网段模式：快速 ping 整个网段
+ping-ip-planning 192.168.1.0/24
+ping-ip-planning 10.0.0.0/24 --max-workers 50
 
-# 可选参数（覆盖交互式选择）
-ping-ip-planning --color green      # 强制只 ping 绿色单元格
-ping-ip-planning --local             # 强制使用本地 ping
-ping-ip-planning --max-workers 10    # 设置并发数
+# 交互式模式：无参数时进入
+ping-ip-planning
 ```
 
 #### IP 地址规划表功能说明

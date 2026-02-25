@@ -2,13 +2,16 @@
 IP 地址规划表 Ping 工具 CLI (增强版)
 专门用于 ping IP 地址规划表中的设备
 
-交互式模式：通过问答方式选择环境和配置
+支持两种使用方式：
+1. 网段模式：直接传入 CIDR 网段快速扫描
+2. 交互式模式：通过问答方式选择环境和配置
 """
 import os
+import ipaddress
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from .core.ping import ping_ip_local, ping_ip_remote
+from .core.ping import ping_ip_local, ping_ip_remote, ping_network
 from .core.ssh import SSHClient, SSHConnectionPool
 from .utils.network import get_local_ip
 from .utils.excel_reader import read_network_security_ips, list_available_colors, find_server_credentials
@@ -24,25 +27,180 @@ from .utils.config_manager import (
 )
 
 
+def _ping_subnet_mode(args):
+    """网段模式：直接 ping 指定 CIDR 网段中的所有主机"""
+    try:
+        network = ipaddress.ip_network(args.subnet, strict=False)
+    except ValueError as e:
+        print(f"错误: 无效的网段格式 '{args.subnet}': {e}")
+        print("正确格式示例: 192.168.1.0/24, 10.0.0.0/16")
+        return
+
+    all_ips = list(network.hosts())
+    total = len(all_ips)
+
+    if total == 0:
+        print(f"错误: 网段 {network} 中没有可用的主机地址")
+        return
+
+    if total > 1024:
+        confirm = input(f"网段 {network} 包含 {total} 个 IP，确认继续？(y/n) [n]: ").strip().lower()
+        if confirm != 'y':
+            print("已取消")
+            return
+
+    source_ip = get_local_ip()
+    max_workers = args.max_workers or 30
+
+    print()
+    print("=" * 60)
+    print("网段 Ping 扫描")
+    print("=" * 60)
+    print(f"网段: {network}")
+    print(f"主机数量: {total}")
+    print(f"测试来源: {source_ip} (本地)")
+    print(f"并发数: {max_workers}")
+    print("=" * 60)
+    print()
+
+    reachable, unreachable, ping_results = ping_network(network, ssh_pool=None, max_workers=max_workers)
+
+    # 延迟分析
+    latency_analysis = {}
+    high_latency_ips = []
+
+    for ip in reachable:
+        output = ping_results.get(str(ip), '')
+        rtt_info = analyze_ping_output(output)
+        if rtt_info:
+            latency_analysis[str(ip)] = rtt_info
+            if rtt_info['max'] > 1.0:
+                high_latency_ips.append((str(ip), rtt_info))
+
+    high_latency_ips.sort(key=lambda x: x[1]['max'], reverse=True)
+
+    # 统计
+    print()
+    print("=" * 60)
+    print("测试结果统计")
+    print("=" * 60)
+    print(f"网段: {network}")
+    print(f"总计 IP 数量: {total}")
+    print(f"可达 IP 数量: {len(reachable)}")
+    print(f"不可达 IP 数量: {len(unreachable)}")
+    print(f"可达率: {len(reachable) / total * 100:.1f}%")
+    print(f"延迟质量较差 IP 数量: {len(high_latency_ips)} (最大RTT > 1ms)")
+    print("=" * 60)
+
+    if high_latency_ips:
+        print(f"\n延迟质量较差的 IP ({len(high_latency_ips)}):")
+        print("（最大RTT > 1ms，按延迟从高到低排序）")
+        for ip, rtt_info in high_latency_ips[:10]:
+            print(f"  ⚠ {ip:15s}")
+            print(f"     最小: {rtt_info['min']:.3f} ms, "
+                  f"平均: {rtt_info['avg']:.3f} ms, "
+                  f"最大: {rtt_info['max']:.3f} ms")
+        if len(high_latency_ips) > 10:
+            print(f"  ... 还有 {len(high_latency_ips) - 10} 个（详见日志文件）")
+
+    if reachable:
+        print(f"\n可达的 IP ({len(reachable)}):")
+        for ip in sorted(reachable, key=lambda x: int(ipaddress.ip_address(str(x))))[:20]:
+            print(f"  ✓ {str(ip):15s}")
+        if len(reachable) > 20:
+            print(f"  ... 还有 {len(reachable) - 20} 个（详见日志文件）")
+
+    if unreachable:
+        print(f"\n不可达的 IP ({len(unreachable)}):")
+        for ip in sorted(unreachable, key=lambda x: int(ipaddress.ip_address(str(x))))[:20]:
+            print(f"  ✗ {str(ip):15s}")
+        if len(unreachable) > 20:
+            print(f"  ... 还有 {len(unreachable) - 20} 个（详见日志文件）")
+
+    # 写入日志
+    log_dir = "./logs"
+    os.makedirs(log_dir, exist_ok=True)
+    subnet_name = str(network).replace('/', '_')
+    log_file = os.path.join(log_dir, f"ping_results_subnet_{subnet_name}.log")
+
+    with open(log_file, 'w', encoding='utf-8') as f:
+        f.write(f"总计统计信息:\n")
+        f.write("-" * 40 + "\n")
+        f.write(f"网段: {network}\n")
+        f.write(f"测试来源: {source_ip}\n")
+        f.write(f"总计ping的IP数量: {total}\n")
+        f.write(f"总计可达IP数量: {len(reachable)}\n")
+        f.write(f"总计不可达IP数量: {len(unreachable)}\n")
+        f.write(f"延迟质量较差IP数量: {len(high_latency_ips)} (最大RTT > 1ms)\n")
+        f.write("-" * 40 + "\n\n")
+
+        if high_latency_ips:
+            f.write(f"延迟质量分析:\n")
+            f.write("-" * 40 + "\n")
+            for ip, rtt_info in high_latency_ips:
+                f.write(f"IP: {ip}\n")
+                f.write(f"  最小延迟: {rtt_info['min']:.3f} ms\n")
+                f.write(f"  平均延迟: {rtt_info['avg']:.3f} ms\n")
+                f.write(f"  最大延迟: {rtt_info['max']:.3f} ms\n")
+                f.write(f"  延迟抖动: {rtt_info['mdev']:.3f} ms\n")
+                f.write("-" * 20 + "\n")
+            f.write("\n")
+
+        f.write(f"Ping测试详细信息:\n")
+        f.write("-" * 40 + "\n")
+        f.write(f"测试来源: {source_ip}\n")
+        f.write("-" * 40 + "\n\n")
+
+        if reachable:
+            f.write(f"从 {source_ip} 可达的IP:\n\n")
+            for ip in sorted(reachable, key=lambda x: int(ipaddress.ip_address(str(x)))):
+                ip_str = str(ip)
+                f.write(f"{ip_str}\n")
+                f.write("-" * 40 + "\n")
+                if ip_str in latency_analysis:
+                    rtt = latency_analysis[ip_str]
+                    f.write(f"延迟统计: min={rtt['min']:.3f}ms, "
+                            f"avg={rtt['avg']:.3f}ms, "
+                            f"max={rtt['max']:.3f}ms, "
+                            f"mdev={rtt['mdev']:.3f}ms\n")
+                    f.write("-" * 40 + "\n")
+                f.write(ping_results.get(ip_str, ''))
+                f.write("\n\n")
+
+        if unreachable:
+            f.write(f"\n从 {source_ip} 不可达的IP:\n\n")
+            for ip in sorted(unreachable, key=lambda x: int(ipaddress.ip_address(str(x)))):
+                ip_str = str(ip)
+                f.write(f"{ip_str}\n")
+                f.write("-" * 40 + "\n")
+                f.write(ping_results.get(ip_str, ''))
+                f.write("\n\n")
+
+    print(f"\n详细结果已写入: {log_file}")
+    print("程序执行完成！")
+
+
 def ping_ip_planning_main():
     """IP 地址规划表 Ping 工具主程序"""
     parser = argparse.ArgumentParser(
-        description='Ping IP 地址规划表中的设备（交互式）',
+        description='Ping IP 地址规划表中的设备',
         epilog="""
 使用方法:
-  直接运行进入交互式模式:
-     ping-ip-planning
+  网段模式（快速扫描）:
+     ping-ip-planning 192.168.1.0/24
+     ping-ip-planning 10.0.0.0/16
   
-  通过问答方式选择:
-    1. 选择环境（项目）
-    2. 选择 Sheet
-    3. 选择列和 ping 模式
-    4. 颜色过滤
+  交互式模式（无参数时自动进入）:
+     ping-ip-planning
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # 可选参数（用于覆盖交互式选择）
+    # 位置参数：网段（可选）
+    parser.add_argument('subnet', nargs='?', default=None,
+                        help='CIDR 网段，如 192.168.1.0/24')
+    
+    # 可选参数
     parser.add_argument('--color', '-c', choices=['green', 'none'],
                         help='过滤颜色: green=只 ping 绿色单元格, none=不过滤颜色')
     parser.add_argument('--no-exclude-strikethrough', action='store_true',
@@ -52,9 +210,14 @@ def ping_ip_planning_main():
     parser.add_argument('--local', action='store_true',
                         help='强制使用本地 ping（不使用远程服务器）')
     parser.add_argument('--max-workers', type=int, default=None,
-                        help='并发数（默认：远程5，本地20）')
+                        help='并发数（默认：本地30）')
     
     args = parser.parse_args()
+    
+    # 网段模式：直接 ping 整个网段
+    if args.subnet:
+        _ping_subnet_mode(args)
+        return
     
     # 初始化配置管理器
     config_manager = ConfigManager()

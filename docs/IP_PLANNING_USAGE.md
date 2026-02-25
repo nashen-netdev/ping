@@ -2,23 +2,23 @@
 
 ## 快速开始
 
-### 1. 基本使用
+### 1. 网段模式（快速扫描）
 
 ```bash
 # 激活虚拟环境
 cd /Users/sen/automate/Network_Projects/ethernet/ping
 source .venv/bin/activate
 
-# 直接运行（交互式模式）
-ping-ip-planning
+# 直接 ping 一个网段
+ping-ip-planning 192.168.1.0/24
 
-# 或使用 Python 模块方式
-python3 -m ping_tool.cli_ip_planning
+# 指定并发数
+ping-ip-planning 10.201.232.0/24 --max-workers 50
 ```
 
-### 2. 交互式流程
+### 2. 交互式模式（Excel 规划表）
 
-运行后会引导你进行选择：
+无参数时自动进入交互式流程：
 
 ```bash
 $ ping-ip-planning
@@ -52,19 +52,28 @@ MGMT 列索引: 11, hostname 列索引: 10
 
 ## 命令行参数
 
-所有参数都是可选的，用于覆盖交互式选择：
-
 | 参数 | 简写 | 说明 | 默认值 |
 |------|------|------|--------|
+| `subnet` | - | CIDR 网段（位置参数，如 `192.168.1.0/24`） | 无（进入交互模式） |
 | `--color` | `-c` | 颜色过滤（green/none） | 交互式选择 |
 | `--local` | - | 强制使用本地 ping | 交互式选择 |
-| `--max-workers` | - | 并发数 | 自动（远程5，本地20） |
+| `--max-workers` | - | 并发数 | 自动（本地30） |
 | `--list-colors` | - | 列出可用颜色 | - |
 | `--no-exclude-strikethrough` | - | 不排除删除线 | False |
 
 ## 使用场景
 
-### 场景 1：快速测试网络设备
+### 场景 1：快速扫描一个网段
+
+```bash
+# 直接传入 CIDR 网段
+ping-ip-planning 192.168.254.0/24
+
+# 大网段加大并发
+ping-ip-planning 10.0.0.0/16 --max-workers 100
+```
+
+### 场景 2：使用 Excel 规划表测试
 
 ```bash
 # 交互式模式
@@ -72,14 +81,12 @@ ping-ip-planning
 # 然后选择：环境 -> Sheet -> 列 -> ping模式 -> 颜色过滤
 ```
 
-### 场景 2：只测试绿色标记的设备
+### 场景 3：只测试绿色标记的设备
 
 ```bash
 # 运行时强制过滤绿色
 ping-ip-planning --color green
 # 然后正常进行交互式选择
-ping-ip-planning
-# 然后输入 y
 ```
 
 ### 场景 3：测试服务器和安全设备
